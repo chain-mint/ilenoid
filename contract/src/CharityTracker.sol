@@ -356,6 +356,83 @@ contract CharityTracker is Ownable, ReentrancyGuard, Pausable {
     }
 
     // =============================================================
+    //                      FUND RELEASE
+    // =============================================================
+
+    /// @notice Release funds for the current milestone
+    /// @param projectId The ID of the project to release funds for
+    /// @dev Only the project's NGO can release funds. Requires >50% quorum from donors.
+    ///      Follows CEI pattern for security. Transfers funds (ETH or ERC20) to NGO.
+    ///      Marks project as completed if this is the final milestone.
+    function releaseFunds(uint256 projectId) external whenNotPaused nonReentrant {
+        // Validation Checks (CEI Pattern - Checks)
+        if (projects[projectId].id == 0) {
+            revert Errors.ProjectNotFound();
+        }
+
+        if (msg.sender != projects[projectId].ngo) {
+            revert Errors.NotProjectNGO();
+        }
+
+        uint256 currentMilestoneId = projects[projectId].currentMilestone;
+        if (currentMilestoneId >= projectMilestoneCount[projectId]) {
+            revert Errors.NoCurrentMilestone();
+        }
+
+        DataStructures.Milestone storage milestone = milestones[projectId][currentMilestoneId];
+        if (milestone.approved) {
+            revert Errors.MilestoneAlreadyApproved();
+        }
+
+        if (milestone.fundsReleased) {
+            revert Errors.MilestoneAlreadyReleased();
+        }
+
+        uint256 snapshot = milestoneSnapshotDonations[projectId][currentMilestoneId];
+        if (snapshot == 0) {
+            revert Errors.QuorumNotMet();
+        }
+
+        // Check quorum: voteWeight must be > 50% of snapshot
+        if (milestone.voteWeight <= (snapshot * 50) / 100) {
+            revert Errors.QuorumNotMet();
+        }
+
+        if (projects[projectId].balance < milestone.amountRequested) {
+            revert Errors.InsufficientProjectBalance();
+        }
+
+        // State Changes (CEI Pattern - Effects)
+        milestone.approved = true;
+        milestone.fundsReleased = true;
+        projects[projectId].balance -= milestone.amountRequested;
+        projects[projectId].currentMilestone++;
+
+        // Check if this is the final milestone
+        bool isFinalMilestone = (currentMilestoneId + 1) == projectMilestoneCount[projectId];
+        if (isFinalMilestone) {
+            projects[projectId].isCompleted = true;
+            projects[projectId].isActive = false;
+        }
+
+        // External Calls (CEI Pattern - Interactions)
+        uint256 amount = milestone.amountRequested;
+        if (projects[projectId].donationToken == address(0)) {
+            // ETH transfer
+            payable(projects[projectId].ngo).transfer(amount);
+        } else {
+            // ERC20 transfer
+            IERC20(projects[projectId].donationToken).transfer(projects[projectId].ngo, amount);
+        }
+
+        // Events
+        emit FundsReleased(projectId, currentMilestoneId, amount);
+        if (isFinalMilestone) {
+            emit ProjectCompleted(projectId);
+        }
+    }
+
+    // =============================================================
     //                       ETH HANDLING
     // =============================================================
 
