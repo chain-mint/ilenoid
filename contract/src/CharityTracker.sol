@@ -30,6 +30,7 @@ contract CharityTracker is Ownable, ReentrancyGuard, Pausable {
     );
     event FundsReleased(uint256 indexed projectId, uint256 indexed milestoneId, uint256 amount);
     event ProjectCompleted(uint256 indexed projectId);
+    event EmergencyWithdrawal(uint256 indexed projectId, uint256 amount);
 
     // =============================================================
     //                      DATA STRUCTURES
@@ -430,6 +431,38 @@ contract CharityTracker is Ownable, ReentrancyGuard, Pausable {
         if (isFinalMilestone) {
             emit ProjectCompleted(projectId);
         }
+    }
+
+    // =============================================================
+    //                  EMERGENCY CONTROLS
+    // =============================================================
+
+    /// @notice Emergency withdrawal of funds from a project (only when paused)
+    /// @param projectId The ID of the project to withdraw funds from
+    /// @dev Only owner can withdraw. Only works when contract is paused.
+    ///      Withdraws all remaining balance from the project to the owner.
+    ///      This is a last resort for stuck funds.
+    function emergencyWithdraw(uint256 projectId) external onlyOwner whenPaused {
+        // Validation Checks
+        if (projects[projectId].id == 0) {
+            revert Errors.ProjectNotFound();
+        }
+
+        // State Changes (CEI Pattern - Effects)
+        uint256 amount = projects[projectId].balance;
+        projects[projectId].balance = 0;
+
+        // External Calls (CEI Pattern - Interactions)
+        if (projects[projectId].donationToken == address(0)) {
+            // ETH transfer
+            payable(owner()).transfer(amount);
+        } else {
+            // ERC20 transfer
+            IERC20(projects[projectId].donationToken).transfer(owner(), amount);
+        }
+
+        // Events
+        emit EmergencyWithdrawal(projectId, amount);
     }
 
     // =============================================================

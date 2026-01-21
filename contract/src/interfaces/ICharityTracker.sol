@@ -15,6 +15,7 @@ interface ICharityTracker {
     );
     event FundsReleased(uint256 indexed projectId, uint256 indexed milestoneId, uint256 amount);
     event ProjectCompleted(uint256 indexed projectId);
+    event EmergencyWithdrawal(uint256 indexed projectId, uint256 amount);
 
     // NGO Management
     function registerNGO(address ngo) external;
