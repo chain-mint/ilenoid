@@ -13,13 +13,18 @@ contract CharityTracker is Ownable, ReentrancyGuard, Pausable {
     //                           EVENTS
     // =============================================================
 
-    event NGORegistered(address ngo);
-    event NGORevoked(address ngo);
-    event ProjectCreated(uint256 projectId, address ngo);
-    event DonationReceived(uint256 projectId, address donor, uint256 amount);
-    event MilestoneVoted(uint256 projectId, uint256 milestoneId, address voter, uint256 weight);
-    event FundsReleased(uint256 projectId, uint256 milestoneId, uint256 amount);
-    event ProjectCompleted(uint256 projectId);
+    event NGORegistered(address indexed ngo);
+    event NGORevoked(address indexed ngo);
+    event ProjectCreated(uint256 indexed projectId, address indexed ngo);
+    event DonationReceived(uint256 indexed projectId, address indexed donor, uint256 amount);
+    event MilestoneVoted(
+        uint256 indexed projectId,
+        uint256 indexed milestoneId,
+        address indexed voter,
+        uint256 weight
+    );
+    event FundsReleased(uint256 indexed projectId, uint256 indexed milestoneId, uint256 amount);
+    event ProjectCompleted(uint256 indexed projectId);
 
     // =============================================================
     //                           ERRORS
