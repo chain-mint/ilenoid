@@ -309,6 +309,53 @@ contract CharityTracker is Ownable, ReentrancyGuard, Pausable {
     }
 
     // =============================================================
+    //                      MILESTONE VOTING
+    // =============================================================
+
+    /// @notice Vote on the current milestone for a project
+    /// @param projectId The ID of the project to vote on
+    /// @dev Only donors with contributions can vote. Vote weight equals total contribution.
+    ///      One vote per milestone per donor. Snapshot is taken on first vote to prevent
+    ///      donations after voting starts from affecting the quorum calculation.
+    function voteMilestone(uint256 projectId) external whenNotPaused {
+        // Validation Checks (CEI Pattern - Checks)
+        if (projects[projectId].id == 0) {
+            revert Errors.ProjectNotFound();
+        }
+
+        uint256 currentMilestoneId = projects[projectId].currentMilestone;
+        if (currentMilestoneId >= projectMilestoneCount[projectId]) {
+            revert Errors.NoCurrentMilestone();
+        }
+
+        DataStructures.Milestone storage milestone = milestones[projectId][currentMilestoneId];
+        if (milestone.approved) {
+            revert Errors.MilestoneAlreadyApproved();
+        }
+
+        if (donorContributions[projectId][msg.sender] == 0) {
+            revert Errors.NoContribution();
+        }
+
+        if (hasVoted[projectId][currentMilestoneId][msg.sender]) {
+            revert Errors.AlreadyVoted();
+        }
+
+        // Snapshot Logic: Capture total donations at vote start (first vote only)
+        if (milestoneSnapshotDonations[projectId][currentMilestoneId] == 0) {
+            milestoneSnapshotDonations[projectId][currentMilestoneId] = totalProjectDonations[projectId];
+        }
+
+        // State Changes (CEI Pattern - Effects)
+        uint256 voteWeight = donorContributions[projectId][msg.sender];
+        milestone.voteWeight += voteWeight;
+        hasVoted[projectId][currentMilestoneId][msg.sender] = true;
+
+        // Events
+        emit MilestoneVoted(projectId, currentMilestoneId, msg.sender, voteWeight);
+    }
+
+    // =============================================================
     //                       ETH HANDLING
     // =============================================================
 
