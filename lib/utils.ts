@@ -1,0 +1,78 @@
+import { formatUnits, formatEther as viemFormatEther } from "viem";
+
+/**
+ * Format an Ethereum address to truncated format
+ * @param address - Full Ethereum address
+ * @returns Truncated address in format: 0x1234...5678
+ */
+export function formatAddress(address: string): string {
+  if (!address || address.length < 10) {
+    return address;
+  }
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+/**
+ * Format wei amount to ETH string
+ * @param amount - Amount in wei (bigint)
+ * @returns Formatted ETH string with appropriate decimals
+ */
+export function formatEther(amount: bigint): string {
+  try {
+    return viemFormatEther(amount);
+  } catch (error) {
+    return "0";
+  }
+}
+
+/**
+ * Format USDC amount (6 decimals)
+ * @param amount - Amount in smallest USDC unit (bigint)
+ * @returns Formatted USDC string with 6 decimals
+ */
+export function formatUSDC(amount: bigint): string {
+  try {
+    return formatUnits(amount, 6);
+  } catch (error) {
+    return "0";
+  }
+}
+
+/**
+ * Format number with commas for large numbers
+ * @param num - Number or bigint to format
+ * @returns Formatted string with commas
+ */
+export function formatNumber(num: number | bigint): string {
+  const numStr = num.toString();
+  
+  // Handle bigint
+  if (typeof num === "bigint") {
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  
+  // Handle regular numbers
+  if (Number.isInteger(num)) {
+    return num.toLocaleString("en-US");
+  }
+  
+  // Handle decimal numbers
+  const parts = numStr.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+}
+
+/**
+ * Format percentage value
+ * @param value - Current value
+ * @param total - Total value
+ * @returns Formatted percentage string with 1 decimal place
+ */
+export function formatPercentage(value: number, total: number): string {
+  if (total === 0) {
+    return "0.0";
+  }
+  const percentage = (value / total) * 100;
+  return percentage.toFixed(1);
+}
+
