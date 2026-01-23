@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useBalance } from "wagmi";
+import { useConnection, useBalance } from "wagmi";
 import { type Address, isAddress, parseEther, parseUnits, formatEther, formatUnits } from "viem";
 import { useDonateETH, useDonateERC20 } from "@/hooks/useDonation";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,7 @@ export interface DonateFormProps {
  * DonateForm component for making donations
  */
 export function DonateForm({ projectId, donationToken, onSuccess }: DonateFormProps) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useConnection();
   const [amount, setAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
 

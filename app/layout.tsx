@@ -1,19 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import dynamic from "next/dynamic";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { NetworkError } from "@/components/web3/NetworkError";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-
-// Lazy load modals for code splitting
-const DonateModal = dynamic(() => import("@/components/donation/DonateModal").then((mod) => ({ default: mod.DonateModal })), {
-  ssr: false,
-});
-
-const CreateProjectModal = dynamic(() => import("@/components/project/CreateProjectModal").then((mod) => ({ default: mod.CreateProjectModal })), {
-  ssr: false,
-});
+import { Modals } from "@/components/Modals";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,8 +89,7 @@ export default function RootLayout({
           <Providers>
             {children}
             <NetworkError />
-            <DonateModal />
-            <CreateProjectModal />
+            <Modals />
           </Providers>
         </ErrorBoundary>
       </body>
