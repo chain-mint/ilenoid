@@ -41,6 +41,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 primary: "#2ECC71", // Emerald Green
                 secondary: "#ffffff",
               },
+              className: "toast-success",
+              style: {
+                background: "#2ECC71", // Emerald Green
+                color: "#ffffff",
+              },
             },
             error: {
               iconTheme: {

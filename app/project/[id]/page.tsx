@@ -11,8 +11,14 @@ import { DonateForm } from "@/components/donation/DonateForm";
 import { DonationHistory } from "@/components/donation/DonationHistory";
 import { WalletConnect } from "@/components/web3/WalletConnect";
 import { NetworkSwitcher } from "@/components/web3/NetworkSwitcher";
-import { Spinner } from "@/components/ui/Spinner";
 import { Card, CardBody } from "@/components/ui/Card";
+import {
+  Skeleton,
+  TextSkeleton,
+  CardSkeleton,
+  MilestoneCardSkeleton,
+} from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatAddress, formatEther, formatUSDC, formatPercentage } from "@/lib/utils";
 import { isAddress } from "viem";
 import { USDC_ADDRESS } from "@/lib/contract";
@@ -36,32 +42,6 @@ export default function ProjectDetailsPage() {
   const { milestone: currentMilestone, isLoading: isLoadingCurrentMilestone } = useCurrentMilestone(projectId);
 
   const isLoading = isLoadingProject || isLoadingMilestones || isLoadingCurrentMilestone;
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-deep-blue text-white shadow-md">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="text-white hover:underline">
-                ← Back to Projects
-              </Link>
-              <div className="flex items-center gap-4">
-                <NetworkSwitcher />
-                <WalletConnect />
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   // Error state
   if (isErrorProject || !project) {
@@ -154,48 +134,78 @@ export default function ProjectDetailsPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Project Header */}
-        <Card variant="outlined" className="mb-6">
-          <CardBody>
-            <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-grey mb-2">
-                  Project #{project.id.toString()}
-                </h1>
-                <p className="text-slate-grey opacity-70">
-                  NGO: {formatAddress(project.ngo)}
-                </p>
+        {isLoadingProject ? (
+          <Card variant="outlined" className="mb-6">
+            <CardBody>
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Skeleton shape="text" height="2rem" width="40%" className="mb-2" />
+                    <Skeleton shape="text" height="1rem" width="60%" />
+                  </div>
+                  <Skeleton shape="rectangle" height="2rem" width="100px" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Skeleton shape="text" height="0.875rem" width="50%" />
+                    <Skeleton shape="text" height="1.5rem" width="70%" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton shape="text" height="0.875rem" width="50%" />
+                    <Skeleton shape="text" height="1.5rem" width="70%" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton shape="text" height="0.875rem" width="30%" />
+                  <Skeleton shape="rectangle" height="0.75rem" width="100%" />
+                </div>
               </div>
-              <span className={`px-4 py-2 rounded-full text-sm font-medium text-white ${status.color}`}>
-                {status.label}
-              </span>
-            </div>
+            </CardBody>
+          </Card>
+        ) : (
+          <Card variant="outlined" className="mb-6">
+            <CardBody>
+              <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-grey mb-2">
+                    Project #{project.id.toString()}
+                  </h1>
+                  <p className="text-slate-grey opacity-70">
+                    NGO: {formatAddress(project.ngo)}
+                  </p>
+                </div>
+                <span className={`px-4 py-2 rounded-full text-sm font-medium text-white ${status.color}`}>
+                  {status.label}
+                </span>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-              <div>
-                <p className="text-sm text-slate-grey opacity-70 mb-1">Fundraising Goal:</p>
-                <p className="text-xl font-semibold text-slate-grey">{formattedGoal}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <div>
+                  <p className="text-sm text-slate-grey opacity-70 mb-1">Fundraising Goal:</p>
+                  <p className="text-xl font-semibold text-slate-grey">{formattedGoal}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-grey opacity-70 mb-1">Total Donated:</p>
+                  <p className="text-xl font-semibold text-emerald-green">{formattedDonated} {tokenName}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-slate-grey opacity-70 mb-1">Total Donated:</p>
-                <p className="text-xl font-semibold text-emerald-green">{formattedDonated} {tokenName}</p>
-              </div>
-            </div>
 
-            {/* Progress Bar */}
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-slate-grey opacity-70">Progress</span>
-                <span className="font-medium text-slate-grey">{progressPercentage}%</span>
+              {/* Progress Bar */}
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-grey opacity-70">Progress</span>
+                  <span className="font-medium text-slate-grey">{progressPercentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-emerald-green h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(parseFloat(progressPercentage), 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-emerald-green h-3 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(parseFloat(progressPercentage), 100)}%` }}
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Main Content */}
@@ -204,15 +214,23 @@ export default function ProjectDetailsPage() {
             <Card variant="outlined">
               <CardBody>
                 <h2 className="text-xl font-semibold text-slate-grey mb-4">
-                  Milestones ({milestones.length})
+                  Milestones {!isLoadingMilestones && `(${milestones.length})`}
                 </h2>
-                <div className="space-y-4">
-                  {milestones.length === 0 ? (
-                    <p className="text-slate-grey opacity-70 text-center py-4">
-                      No milestones defined for this project
-                    </p>
-                  ) : (
-                    milestones.map((milestone, index) => (
+                {isLoadingMilestones ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <MilestoneCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : milestones.length === 0 ? (
+                  <EmptyState
+                    variant="no-milestones"
+                    title="No milestones defined"
+                    description="This project doesn't have any milestones yet."
+                  />
+                ) : project ? (
+                  <div className="space-y-4">
+                    {milestones.map((milestone, index) => (
                       <MilestoneCard
                         key={index}
                         milestone={milestone}
@@ -220,14 +238,16 @@ export default function ProjectDetailsPage() {
                         currentMilestoneIndex={project.currentMilestone}
                         donationToken={project.donationToken}
                       />
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : null}
               </CardBody>
             </Card>
 
             {/* Voting Progress for Current Milestone */}
-            {currentMilestone && (
+            {isLoadingCurrentMilestone ? (
+              <CardSkeleton />
+            ) : currentMilestone && project ? (
               <div className="space-y-4">
                 <VotingProgress
                   projectId={projectId}
@@ -238,16 +258,20 @@ export default function ProjectDetailsPage() {
                   <ReleaseFundsButton projectId={projectId} />
                 )}
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
             {/* Donation Form */}
-            <DonateForm
-              projectId={projectId}
-              donationToken={project.donationToken}
-            />
+            {isLoadingProject || !project ? (
+              <CardSkeleton />
+            ) : (
+              <DonateForm
+                projectId={projectId}
+                donationToken={project.donationToken}
+              />
+            )}
 
             {/* Donation History */}
             {address && (

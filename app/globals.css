@@ -39,3 +39,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Success Animation */
+@keyframes successCheckmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.success-checkmark {
+  animation: successCheckmark 0.5s ease-out;
+}
+
+.success-pulse {
+  animation: successPulse 2s ease-in-out infinite;
+}
+
+/* Toast Success Styling */
+.toast-success {
+  background-color: var(--color-emerald-green) !important;
+  color: white !important;
+}
+
+.toast-success-icon {
+  color: white !important;
+}

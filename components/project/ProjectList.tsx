@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useAllProjects } from "@/hooks/useProject";
 import { ProjectCard } from "./ProjectCard";
-import { Spinner } from "@/components/ui/Spinner";
+import { ProjectListSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { type Project } from "@/types/contract";
 
 type FilterStatus = "all" | "active" | "completed";
@@ -45,11 +46,7 @@ export function ProjectList({ searchQuery = "" }: ProjectListProps) {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <ProjectListSkeleton count={6} />;
   }
 
   // Error state
@@ -67,18 +64,19 @@ export function ProjectList({ searchQuery = "" }: ProjectListProps) {
   // Empty state
   if (filteredProjects.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-grey mb-2">
-          {projects.length === 0
+      <EmptyState
+        variant={projects.length === 0 ? "no-projects" : "default"}
+        title={
+          projects.length === 0
             ? "No projects found"
-            : "No projects match your filters"}
-        </p>
-        <p className="text-sm text-slate-grey opacity-70">
-          {projects.length === 0
+            : "No projects match your filters"
+        }
+        description={
+          projects.length === 0
             ? "Be the first to create a project!"
-            : "Try adjusting your search or filters"}
-        </p>
-      </div>
+            : "Try adjusting your search or filters"
+        }
+      />
     );
   }
 

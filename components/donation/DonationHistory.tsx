@@ -5,6 +5,8 @@ import { type Address, isAddress } from "viem";
 import { useDonorContribution } from "@/hooks/useDonation";
 import { useProject } from "@/hooks/useProject";
 import { Card, CardBody } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { formatEther, formatUSDC } from "@/lib/utils";
 import { USDC_ADDRESS } from "@/lib/contract";
 import Link from "next/link";
@@ -40,8 +42,9 @@ export function DonationHistory({ projectId }: DonationHistoryProps) {
     return (
       <Card variant="outlined">
         <CardBody>
-          <div className="text-center py-4">
-            <p className="text-slate-grey opacity-70">Loading...</p>
+          <div className="space-y-4">
+            <Skeleton shape="text" height="1.5rem" width="40%" />
+            <Skeleton shape="text" height="2rem" width="60%" />
           </div>
         </CardBody>
       </Card>
@@ -85,12 +88,11 @@ export function DonationHistory({ projectId }: DonationHistoryProps) {
         </h3>
 
         {contribution === BigInt(0) ? (
-          <div className="text-center py-4">
-            <p className="text-slate-grey opacity-70 mb-2">No contributions yet</p>
-            <p className="text-sm text-slate-grey opacity-60">
-              Be the first to support this project!
-            </p>
-          </div>
+          <EmptyState
+            variant="no-donations"
+            title="No contributions yet"
+            description="Be the first to support this project!"
+          />
         ) : (
           <div className="space-y-3">
             <div>
