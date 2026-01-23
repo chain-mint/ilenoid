@@ -34,11 +34,21 @@ function transformVoteStatusData(data: unknown): VoteStatus | null {
 
 /**
  * Hook to fetch milestone voting status
+ * @param projectId - The project ID
+ * @param milestoneId - The milestone ID
+ * @returns Vote status, quorum percentage, quorum met status, loading state, and error state
  */
 export function useMilestoneVoteStatus(
   projectId: number | bigint,
   milestoneId: number | bigint
-) {
+): {
+  voteStatus: VoteStatus | undefined;
+  quorumPercentage: string;
+  quorumMet: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   const { data, isLoading, isError, error } = useReadContract({
     address: CHARITY_TRACKER_ADDRESS,
     abi: CHARITY_TRACKER_ABI,
@@ -81,12 +91,21 @@ export function useMilestoneVoteStatus(
 
 /**
  * Hook to check if a donor has voted on a milestone
+ * @param projectId - The project ID
+ * @param milestoneId - The milestone ID
+ * @param donorAddress - The donor's address
+ * @returns Whether the donor has voted, loading state, and error state
  */
 export function useHasVoted(
   projectId: number | bigint,
   milestoneId: number | bigint,
   donorAddress: Address | undefined
-) {
+): {
+  hasVoted: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   const { data, isLoading, isError, error } = useReadContract({
     address: CHARITY_TRACKER_ADDRESS,
     abi: CHARITY_TRACKER_ABI,
@@ -110,8 +129,17 @@ export function useHasVoted(
 
 /**
  * Hook for voting on milestones
+ * @param projectId - The project ID
+ * @returns Vote function, transaction hash, loading states, success state, and error
  */
-export function useVoteMilestone(projectId: number | bigint) {
+export function useVoteMilestone(projectId: number | bigint): {
+  vote: () => Promise<void>;
+  hash: `0x${string}` | undefined;
+  isPending: boolean;
+  isConfirming: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+} {
   const { address } = useAccount();
   const queryClient = useQueryClient();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();

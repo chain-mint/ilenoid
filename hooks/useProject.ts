@@ -53,8 +53,16 @@ function transformMilestoneData(data: unknown): Milestone | null {
 
 /**
  * Hook to fetch a single project by ID
+ * @param projectId - The project ID to fetch
+ * @returns Project data, loading state, error state, and refetch function
  */
-export function useProject(projectId: number | bigint) {
+export function useProject(projectId: number | bigint): {
+  project: Project | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  refetch: () => void;
+} {
   const {
     data,
     isLoading,
@@ -87,8 +95,14 @@ export function useProject(projectId: number | bigint) {
 
 /**
  * Hook to fetch all projects
+ * @returns All projects, loading state, and error state
  */
-export function useAllProjects() {
+export function useAllProjects(): {
+  projects: Project[];
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   // First, get the project counter
   const { data: projectCounter, isLoading: isLoadingCounter } =
     useReadContract({
@@ -140,8 +154,15 @@ export function useAllProjects() {
 
 /**
  * Hook to fetch all milestones for a project
+ * @param projectId - The project ID
+ * @returns All milestones for the project, loading state, and error state
  */
-export function useProjectMilestones(projectId: number | bigint) {
+export function useProjectMilestones(projectId: number | bigint): {
+  milestones: Milestone[];
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   // First, get the milestone count
   const { data: milestoneCount, isLoading: isLoadingCount } =
     useReadContract({
@@ -197,8 +218,15 @@ export function useProjectMilestones(projectId: number | bigint) {
 
 /**
  * Hook to fetch the current milestone for a project
+ * @param projectId - The project ID
+ * @returns Current milestone, loading state, and error state
  */
-export function useCurrentMilestone(projectId: number | bigint) {
+export function useCurrentMilestone(projectId: number | bigint): {
+  milestone: Milestone | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   const { data, isLoading, isError, error } = useReadContract({
     address: CHARITY_TRACKER_ADDRESS,
     abi: CHARITY_TRACKER_ABI,

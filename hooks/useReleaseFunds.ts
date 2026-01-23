@@ -9,8 +9,17 @@ import { parseContractError } from "@/lib/errors";
 
 /**
  * Hook for releasing funds (NGO only)
+ * @param projectId - The project ID
+ * @returns Release function, transaction hash, loading states, success state, and error
  */
-export function useReleaseFunds(projectId: number | bigint) {
+export function useReleaseFunds(projectId: number | bigint): {
+  releaseFunds: () => Promise<void>;
+  hash: `0x${string}` | undefined;
+  isPending: boolean;
+  isConfirming: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+} {
   const { address } = useAccount();
   const queryClient = useQueryClient();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();

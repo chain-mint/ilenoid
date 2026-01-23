@@ -36,11 +36,19 @@ const ERC20_ABI = [
 
 /**
  * Hook to fetch donor contribution
+ * @param projectId - The project ID
+ * @param donorAddress - The donor's address
+ * @returns Contribution amount, loading state, and error state
  */
 export function useDonorContribution(
   projectId: number | bigint,
   donorAddress: Address | undefined
-) {
+): {
+  contribution: bigint;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
   const { data, isLoading, isError, error } = useReadContract({
     address: CHARITY_TRACKER_ADDRESS,
     abi: CHARITY_TRACKER_ABI,
@@ -64,8 +72,17 @@ export function useDonorContribution(
 
 /**
  * Hook for ETH donations
+ * @param projectId - The project ID to donate to
+ * @returns Donation function, transaction hash, loading states, success state, and error
  */
-export function useDonateETH(projectId: number | bigint) {
+export function useDonateETH(projectId: number | bigint): {
+  donate: (amount: string) => Promise<void>;
+  hash: `0x${string}` | undefined;
+  isPending: boolean;
+  isConfirming: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+} {
   const { address } = useAccount();
   const queryClient = useQueryClient();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
@@ -147,11 +164,22 @@ export function useDonateETH(projectId: number | bigint) {
 
 /**
  * Hook for ERC20 donations
+ * @param projectId - The project ID to donate to
+ * @param tokenAddress - The ERC20 token address
+ * @returns Donation function, transaction hash, loading states, success state, error, and allowance
  */
 export function useDonateERC20(
   projectId: number | bigint,
   tokenAddress: Address
-) {
+): {
+  donate: (amount: string, decimals?: number) => Promise<void>;
+  hash: `0x${string}` | undefined;
+  isPending: boolean;
+  isConfirming: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+  allowance: bigint;
+} {
   const { address } = useAccount();
   const queryClient = useQueryClient();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
