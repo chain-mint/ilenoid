@@ -15,6 +15,13 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { parseContractError } from "@/lib/errors";
+import {
+  validateGoal,
+  validateAddress,
+  validateMilestoneArrays,
+  validateMilestoneSum,
+} from "@/lib/validation";
 import Link from "next/link";
 
 interface MilestoneInput {
@@ -73,7 +80,8 @@ export default function CreateProjectPage() {
   useEffect(() => {
     const currentError = writeError || receiptError;
     if (currentError) {
-      toast.error(currentError.message || "Failed to create project");
+      const errorMessage = parseContractError(currentError);
+      toast.error(errorMessage);
     }
   }, [writeError, receiptError]);
 
@@ -100,53 +108,46 @@ export default function CreateProjectPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validate goal
-    if (!goal || parseFloat(goal) <= 0) {
+    // Validate goal using utility
+    if (!validateGoal(goal)) {
       newErrors.goal = "Goal must be greater than 0";
     }
 
-    // Validate donation token
+    // Validate donation token using utility
     if (donationToken && donationToken !== "0x0000000000000000000000000000000000000000") {
-      if (!isAddress(donationToken)) {
+      if (!validateAddress(donationToken)) {
         newErrors.donationToken = "Invalid token address";
       }
     }
 
-    // Validate milestones
-    if (milestones.length === 0) {
-      newErrors.milestones = "At least one milestone is required";
+    // Validate milestones using utility
+    const descriptions = milestones.map((m) => m.description);
+    const amounts = milestones.map((m) => m.amount);
+    const milestoneValidation = validateMilestoneArrays(descriptions, amounts);
+
+    if (!milestoneValidation.valid) {
+      newErrors.milestones = milestoneValidation.error || "Invalid milestone data";
+      
+      // Add individual milestone errors if available
+      milestones.forEach((milestone, index) => {
+        if (!milestone.description.trim()) {
+          newErrors[`milestone-${index}`] = "Description is required";
+        }
+        if (!milestone.amount || parseFloat(milestone.amount) <= 0) {
+          const existingError = newErrors[`milestone-${index}`];
+          newErrors[`milestone-${index}`] = existingError
+            ? `${existingError} | Amount must be greater than 0`
+            : "Amount must be greater than 0";
+        }
+      });
     }
 
-    const milestoneErrors: Record<number, string> = {};
-    let totalAmount = 0;
-
-    milestones.forEach((milestone, index) => {
-      const milestoneError: string[] = [];
-      if (!milestone.description.trim()) {
-        milestoneError.push("Description is required");
+    // Validate milestone sum using utility
+    if (goal && amounts.length > 0) {
+      const sumValidation = validateMilestoneSum(amounts, goal);
+      if (!sumValidation.valid && sumValidation.error) {
+        newErrors.milestoneSum = sumValidation.error;
       }
-      if (!milestone.amount || parseFloat(milestone.amount) <= 0) {
-        milestoneError.push("Amount must be greater than 0");
-      } else {
-        totalAmount += parseFloat(milestone.amount);
-      }
-      if (milestoneError.length > 0) {
-        milestoneErrors[index] = milestoneError.join(" | ");
-      }
-    });
-
-    // Add individual milestone errors
-    Object.entries(milestoneErrors).forEach(([index, error]) => {
-      newErrors[`milestone-${index}`] = error;
-    });
-
-    if (Object.keys(milestoneErrors).length > 0) {
-      newErrors.milestoneDetails = "Please fix milestone errors";
-    }
-
-    // Check if sum of amounts <= goal
-    if (goal && totalAmount > parseFloat(goal)) {
-      newErrors.milestoneSum = `Total milestone amounts (${totalAmount}) exceed goal (${goal})`;
     }
 
     setErrors(newErrors);
@@ -204,7 +205,9 @@ export default function CreateProjectPage() {
         ],
       });
     } catch (error) {
-      // Error is handled by writeError
+      // Parse and display error
+      const errorMessage = parseContractError(error);
+      toast.error(errorMessage);
       console.error("Project creation error:", error);
     }
   };

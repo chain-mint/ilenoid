@@ -5,6 +5,7 @@ import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI } from "@/lib/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { parseContractError } from "@/lib/errors";
 
 /**
  * Hook for releasing funds (NGO only)
@@ -58,7 +59,7 @@ export function useReleaseFunds(projectId: number | bigint) {
   useEffect(() => {
     const currentError = writeError || receiptError;
     if (currentError && currentError !== prevErrorRef.current) {
-      const errorMessage = currentError?.message || "Failed to release funds";
+      const errorMessage = parseContractError(currentError);
       toast.error(errorMessage);
       prevErrorRef.current = currentError;
     }
