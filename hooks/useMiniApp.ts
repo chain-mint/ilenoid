@@ -51,7 +51,7 @@ export function useMiniApp() {
     isLoading,
     // Expose SDK actions for convenience
     actions: {
-      signIn: () => sdk.actions.signIn(),
+      signIn: (options?: any) => sdk.actions.signIn(options || {}),
       ready: () => sdk.actions.ready(),
       close: () => sdk.actions.close(),
       openUrl: (url: string) => sdk.actions.openUrl({ url }),
