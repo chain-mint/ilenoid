@@ -1,60 +1,12 @@
-import { useReadContract, useReadContracts } from "wagmi";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI } from "@/lib/contract";
+import { useQuery } from "@tanstack/react-query";
+import { Cl } from "@stacks/transactions";
+import { ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
+import { callReadOnlyFunction, transformProjectData, transformMilestoneData } from "@/lib/stacks-contract";
+import { getStxAddress } from "@/lib/stacks-connect";
 import { type Project, type Milestone } from "@/types/contract";
-import { type Address } from "viem";
-
-/**
- * Type guard to check if data is a tuple/array
- */
-function isTuple(data: unknown): data is unknown[] {
-  return Array.isArray(data);
-}
-
-/**
- * Safely transform contract project data to Project type
- */
-function transformProjectData(
-  data: unknown,
-  projectId?: bigint
-): Project | null {
-  if (!isTuple(data) || data.length < 9) {
-    return null;
-  }
-
-  return {
-    id: projectId ?? (data[0] as bigint),
-    ngo: data[1] as Address,
-    donationToken: data[2] as Address,
-    goal: data[3] as bigint,
-    totalDonated: data[4] as bigint,
-    balance: data[5] as bigint,
-    currentMilestone: data[6] as bigint,
-    isActive: data[7] as boolean,
-    isCompleted: data[8] as boolean,
-  };
-}
-
-/**
- * Safely transform contract milestone data to Milestone type
- */
-function transformMilestoneData(data: unknown): Milestone | null {
-  if (!isTuple(data) || data.length < 5) {
-    return null;
-  }
-
-  return {
-    description: data[0] as string,
-    amountRequested: data[1] as bigint,
-    approved: data[2] as boolean,
-    fundsReleased: data[3] as boolean,
-    voteWeight: data[4] as bigint,
-  };
-}
 
 /**
  * Hook to fetch a single project by ID
- * @param projectId - The project ID to fetch
- * @returns Project data, loading state, error state, and refetch function
  */
 export function useProject(projectId: number | bigint): {
   project: Project | undefined;
@@ -63,39 +15,41 @@ export function useProject(projectId: number | bigint): {
   error: Error | null;
   refetch: () => void;
 } {
+  const senderAddress = getStxAddress();
+
   const {
     data,
     isLoading,
     isError,
     error,
     refetch,
-  } = useReadContract({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "getProject",
-    args: [BigInt(projectId)],
-    query: {
-      enabled: projectId > 0,
+  } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: async () => {
+      if (!projectId || projectId <= 0) return null;
+      
+      const result = await callReadOnlyFunction(
+        ILENOID_CONTRACT_INTERFACE.readOnly.getProject,
+        [Cl.uint(BigInt(projectId))],
+        senderAddress || undefined
+      );
+      
+      return transformProjectData(result, Number(projectId));
     },
+    enabled: projectId > 0 && !!senderAddress,
   });
 
-  // Transform the contract response to Project type
-  const project: Project | undefined = data
-    ? transformProjectData(data) ?? undefined
-    : undefined;
-
   return {
-    project,
+    project: data || undefined,
     isLoading,
     isError,
-    error,
+    error: error as Error | null,
     refetch,
   };
 }
 
 /**
  * Hook to fetch all projects
- * @returns All projects, loading state, and error state
  */
 export function useAllProjects(): {
   projects: Project[];
@@ -103,59 +57,60 @@ export function useAllProjects(): {
   isError: boolean;
   error: Error | null;
 } {
+  const senderAddress = getStxAddress();
+
   // First, get the project counter
-  const { data: projectCounter, isLoading: isLoadingCounter } =
-    useReadContract({
-      address: CHARITY_TRACKER_ADDRESS,
-      abi: CHARITY_TRACKER_ABI,
-      functionName: "projectCounter",
-    });
-
-  // Create array of project IDs (1 to projectCounter)
-  const counter = projectCounter as bigint | undefined;
-  const projectIds =
-    counter && counter > BigInt(0)
-      ? Array.from({ length: Number(counter) }, (_, i) => i + 1)
-      : [];
-
-  // Batch fetch all projects
-  const contracts = projectIds.map((id) => ({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "getProject" as const,
-    args: [BigInt(id)] as const,
-  }));
-
-  const { data, isLoading, isError, error } = useReadContracts({
-    contracts,
-    query: {
-      enabled: projectIds.length > 0,
+  const { data: projectCounter, isLoading: isLoadingCounter } = useQuery({
+    queryKey: ["projectCounter"],
+    queryFn: async () => {
+      const result = await callReadOnlyFunction(
+        ILENOID_CONTRACT_INTERFACE.readOnly.getProjectCounter,
+        [],
+        senderAddress || undefined
+      );
+      return Number(result.value || result || 0);
     },
+    enabled: !!senderAddress,
   });
 
-  // Transform the results
-  const projects: Project[] =
-    data
-      ?.map((result, index) => {
-        if (result.status === "failure" || !result.result) {
-          return null;
-        }
-        return transformProjectData(result.result, BigInt(projectIds[index]));
-      })
-      .filter((p): p is Project => p !== null && p.id > BigInt(0)) || [];
+  // Fetch all projects
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["allProjects", projectCounter],
+    queryFn: async () => {
+      if (!projectCounter || projectCounter === 0) return [];
+
+      const projectIds = Array.from({ length: projectCounter }, (_, i) => i + 1);
+      const projects = await Promise.all(
+        projectIds.map(async (id) => {
+          try {
+            const result = await callReadOnlyFunction(
+              ILENOID_CONTRACT_INTERFACE.readOnly.getProject,
+              [Cl.uint(id)],
+              senderAddress || undefined
+            );
+            return transformProjectData(result, id);
+          } catch (error) {
+            console.error(`Error fetching project ${id}:`, error);
+            return null;
+          }
+        })
+      );
+
+      return projects.filter((p): p is Project => p !== null && p.id > BigInt(0));
+    },
+    enabled: !!projectCounter && projectCounter > 0 && !!senderAddress,
+  });
 
   return {
-    projects,
+    projects: data || [],
     isLoading: isLoading || isLoadingCounter,
     isError,
-    error,
+    error: error as Error | null,
   };
 }
 
 /**
  * Hook to fetch all milestones for a project
- * @param projectId - The project ID
- * @returns All milestones for the project, loading state, and error state
  */
 export function useProjectMilestones(projectId: number | bigint): {
   milestones: Milestone[];
@@ -163,90 +118,49 @@ export function useProjectMilestones(projectId: number | bigint): {
   isError: boolean;
   error: Error | null;
 } {
-  // First, get the milestone count
-  const { data: milestoneCount, isLoading: isLoadingCount } =
-    useReadContract({
-      address: CHARITY_TRACKER_ADDRESS,
-      abi: CHARITY_TRACKER_ABI,
-      functionName: "getProjectMilestoneCount",
-      args: [BigInt(projectId)],
-      query: {
-        enabled: projectId > 0,
-      },
-    });
+  const senderAddress = getStxAddress();
 
-  // Create array of milestone IDs (0-indexed: 0, 1, 2, ...)
-  const count = milestoneCount as bigint | undefined;
-  const milestoneIds =
-    count && count > BigInt(0)
-      ? Array.from({ length: Number(count) }, (_, i) => i)
-      : [];
+  // Get project to find milestone count
+  const { data: project, isLoading: isLoadingProject } = useProject(projectId);
 
-  // Batch fetch all milestones
-  const contracts = milestoneIds.map((milestoneId) => ({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "getMilestone" as const,
-    args: [BigInt(projectId), BigInt(milestoneId)] as const,
-  }));
+  // Fetch all milestones
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["projectMilestones", projectId, project?.milestoneCount],
+    queryFn: async () => {
+      if (!project || !project.milestoneCount) return [];
 
-  const { data, isLoading, isError, error } = useReadContracts({
-    contracts,
-    query: {
-      enabled: milestoneIds.length > 0,
+      const milestoneIds = Array.from({ length: project.milestoneCount }, (_, i) => i);
+      const milestones = await Promise.all(
+        milestoneIds.map(async (milestoneId) => {
+          try {
+            const result = await callReadOnlyFunction(
+              ILENOID_CONTRACT_INTERFACE.readOnly.getMilestone,
+              [
+                Cl.tuple({
+                  "project-id": Cl.uint(Number(projectId)),
+                  "milestone-id": Cl.uint(milestoneId),
+                }),
+              ],
+              senderAddress || undefined
+            );
+            return transformMilestoneData(result);
+          } catch (error) {
+            console.error(`Error fetching milestone ${milestoneId}:`, error);
+            return null;
+          }
+        })
+      );
+
+      return milestones.filter((m): m is Milestone => m !== null);
     },
+    enabled: !!project && project.milestoneCount > 0 && !!senderAddress,
   });
 
-  // Transform the results
-  const milestones: Milestone[] =
-    data
-      ?.map((result) => {
-        if (result.status === "failure" || !result.result) {
-          return null;
-        }
-        return transformMilestoneData(result.result);
-      })
-      .filter((m): m is Milestone => m !== null) || [];
-
   return {
-    milestones,
-    isLoading: isLoading || isLoadingCount,
+    milestones: data || [],
+    isLoading: isLoading || isLoadingProject,
     isError,
-    error,
-  };
-}
-
-/**
- * Hook to fetch the current milestone for a project
- * @param projectId - The project ID
- * @returns Current milestone, loading state, and error state
- */
-export function useCurrentMilestone(projectId: number | bigint): {
-  milestone: Milestone | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-} {
-  const { data, isLoading, isError, error } = useReadContract({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "getCurrentMilestone",
-    args: [BigInt(projectId)],
-    query: {
-      enabled: projectId > 0,
-    },
-  });
-
-  // Transform the contract response to Milestone type
-  const milestone: Milestone | undefined = data
-    ? transformMilestoneData(data) ?? undefined
-    : undefined;
-
-  return {
-    milestone,
-    isLoading,
-    isError,
-    error,
+    error: error as Error | null,
   };
 }
 
