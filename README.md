@@ -1,12 +1,12 @@
-# 🌍 Transparent Charity Tracker (TCT)
+# 🌍 Ilenoid
 
 <div align="center">
 
-**Building a more accountable future on Base**
+**Building a more accountable future on Stacks**
 
-[![Built on Base](https://img.shields.io/badge/Built%20on-Base-0052FF?style=for-the-badge&logo=base)](https://base.org)
+[![Built on Stacks](https://img.shields.io/badge/Built%20on-Stacks-5546FF?style=for-the-badge&logo=stacks)](https://www.stacks.co)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
-[![Wagmi](https://img.shields.io/badge/Wagmi-v3-FF6B6B?style=for-the-badge)](https://wagmi.sh)
+[![Stacks.js](https://img.shields.io/badge/Stacks.js-v6-5546FF?style=for-the-badge)](https://stacks.js.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
@@ -20,7 +20,7 @@
 
 - [Overview](#-project-overview)
 - [Key Features](#-key-features)
-- [Why Base?](#-why-base)
+- [Why Stacks?](#-why-stacks)
 - [Tech Stack](#-tech-stack)
 - [Live Demo](#-live-demo)
 - [Getting Started](#-getting-started)
@@ -34,7 +34,7 @@
 
 ## 🎯 Project Overview
 
-**Transparent Charity Tracker** is a production-ready decentralized application (dApp) that revolutionizes charity transparency by leveraging blockchain technology on **Base L2**. Every donation, milestone, and fund release is recorded immutably on-chain, ensuring complete accountability and trust.
+**Ilenoid** is a production-ready decentralized application (dApp) that revolutionizes charity transparency by leveraging blockchain technology on **Stacks**. Every donation, milestone, and fund release is recorded immutably on-chain, ensuring complete accountability and trust.
 
 ### The Problem We Solve
 
@@ -65,10 +65,10 @@ Traditional charity platforms lack transparency. Donors lose track of funds once
 - **Real-Time Updates**: React Query for efficient data fetching and caching
 - **Emergency Controls**: Pausable contracts with owner controls
 
-### 🚀 Base Ecosystem Integration
+### 🚀 Stacks Ecosystem Integration
 - **Farcaster Mini App**: Native integration for social discovery and viral growth
-- **Base L2 Benefits**: Ultra-low fees, fast transactions, Ethereum security
-- **Modern Web3 Stack**: Wagmi v3, Viem, latest React patterns
+- **Stacks Benefits**: Bitcoin security, Clarity language, low fees
+- **Modern Web3 Stack**: Stacks.js, Stacks Connect, latest React patterns
 
 ### 🎨 User Experience
 - **Responsive Design**: Works seamlessly on desktop and mobile
@@ -84,16 +84,16 @@ Traditional charity platforms lack transparency. Donors lose track of funds once
 
 ---
 
-## 🏗️ Why Base?
+## 🏗️ Why Stacks?
 
-We chose **Base** as our platform because:
+We chose **Stacks** as our platform because:
 
-1. **Ultra-Low Fees**: Perfect for micro-donations and frequent transactions
-2. **Ethereum Security**: Inherits security from Ethereum mainnet
-3. **Fast Transactions**: Near-instant confirmation times
+1. **Bitcoin Security**: Inherits security and finality from Bitcoin
+2. **Clarity Language**: Decidable, secure smart contracts by design
+3. **Low Fees**: Affordable transactions for micro-donations
 4. **Growing Ecosystem**: Active community and strong developer support
-5. **Farcaster Integration**: Native social layer for discovery and engagement
-6. **OP Stack**: Built on proven, open-source technology
+5. **sBTC Integration**: Native Bitcoin support through sBTC
+6. **Post-Conditions**: Built-in transaction safety features
 
 ---
 
@@ -101,7 +101,7 @@ We chose **Base** as our platform because:
 
 ### Frontend
 - **Framework**: [Next.js 16.1](https://nextjs.org) (App Router, React Server Components)
-- **Web3**: [Wagmi v3](https://wagmi.sh) + [Viem](https://viem.sh)
+- **Web3**: [Stacks.js](https://stacks.js.org) + [Stacks Connect](https://www.hiro.so/wallet/connect-web)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com)
 - **State Management**: [Zustand v5](https://zustand-demo.pmnd.rs)
 - **Data Fetching**: [TanStack Query v5](https://tanstack.com/query)
@@ -109,39 +109,39 @@ We chose **Base** as our platform because:
 - **Notifications**: React Hot Toast
 
 ### Smart Contracts
-- **Language**: Solidity ^0.8.24
-- **Framework**: [Foundry](https://book.getfoundry.sh)
-- **Security**: OpenZeppelin Contracts (ReentrancyGuard, Pausable, Ownable)
-- **Testing**: Comprehensive Foundry test suite
+- **Language**: [Clarity](https://docs.stacks.co/docs/clarity)
+- **Framework**: [Clarinet](https://docs.hiro.so/clarinet)
+- **Security**: Clarity's built-in security features (no reentrancy by design)
+- **Testing**: Comprehensive Clarinet test suite
 
 ### Infrastructure
-- **Deployment**: Vercel (Frontend), Base Mainnet (Contracts)
-- **RPC**: Base RPC endpoints
+- **Deployment**: Vercel (Frontend), Stacks Mainnet (Contracts)
+- **RPC**: Stacks API endpoints
 - **IPFS**: For milestone proofs and receipts (future)
 
 ### Integrations
 - **Farcaster Mini App SDK**: Social discovery and engagement
-- **WalletConnect**: Multi-wallet support
-- **Etherscan**: Contract verification
+- **Stacks Connect**: Multi-wallet support (Hiro, Xverse, etc.)
+- **Stacks Explorer**: Contract verification and exploration
 
 ---
 
 ## 🌐 Live Demo
 
-- **Frontend**: [https://tranct.netlify.app](https://tranct.netlify.app) 🚀
-- **Base Sepolia Testnet**: [https://sepolia.basescan.org/address/0x46c17579afF1635b9d983603ED0b4A1c0823bF3d](https://sepolia.basescan.org/address/0x46c17579afF1635b9d983603ED0b4A1c0823bF3d)
-- **Base Mainnet**: [`0x9E61018e304f6Cb911ca76132748CFb2AD6B3176`](https://base.blockscout.com/address/0x9E61018e304f6Cb911ca76132748CFb2AD6B3176)
+- **Frontend**: [Coming Soon] 🚀
+- **Stacks Testnet**: [Coming Soon]
+- **Stacks Mainnet**: [Coming Soon]
 
 ### Contract Addresses
 
-**Base Sepolia (Testnet):**
-- CharityTracker: `0x46c17579afF1635b9d983603ED0b4A1c0823bF3d`
-- NGO Registry: `0xc7b93b317634c08D14D806057F9B4C0EB9E62059`
+**Stacks Testnet:**
+- Ilenoid: [Coming Soon]
+- NGO Registry: [Coming Soon]
 
-**Base Mainnet:**
-- CharityTracker: [`0x9E61018e304f6Cb911ca76132748CFb2AD6B3176`](https://base.blockscout.com/address/0x9E61018e304f6Cb911ca76132748CFb2AD6B3176)
-  - [View on Blockscout](https://base.blockscout.com/address/0x9E61018e304f6Cb911ca76132748CFb2AD6B3176)
-  - [View on Basescan](https://basescan.org/address/0x9E61018e304f6Cb911ca76132748CFb2AD6B3176)
+**Stacks Mainnet:**
+- Ilenoid: [Coming Soon]
+  - [View on Stacks Explorer](https://explorer.stacks.co/)
+  - [View on Hiro Explorer](https://explorer.hiro.so/)
 
 ---
 
@@ -151,7 +151,7 @@ We chose **Base** as our platform because:
 
 - **Node.js** 18+ and npm/yarn/pnpm
 - **Web3 Wallet** (MetaMask, Coinbase Wallet, etc.)
-- **Base Sepolia ETH** (for testing) - Get from [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+- **Stacks Testnet STX** (for testing) - Get from [Stacks Testnet Faucet](https://explorer.stacks.co/sandbox/faucet)
 - **Git**
 
 ### Installation
@@ -159,7 +159,7 @@ We chose **Base** as our platform because:
 1. **Clone the repository:**
 ```bash
 git clone <repository-url>
-cd tct
+cd ilenoid
 ```
 
 2. **Install dependencies:**
@@ -181,13 +181,13 @@ Edit `.env.local` with your configuration:
 # Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Base Network
-NEXT_PUBLIC_CHAIN_ID=84532  # 84532 for Base Sepolia, 8453 for Base Mainnet
-NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-# Or use a dedicated provider: https://www.alchemy.com/base
+# Stacks Network
+NEXT_PUBLIC_STACKS_NETWORK=testnet  # testnet or mainnet
+NEXT_PUBLIC_STACKS_API_URL=https://api.testnet.hiro.so
+# Or use a dedicated provider
 
 # Contracts
-NEXT_PUBLIC_CHARITY_TRACKER_ADDRESS=0x46c17579afF1635b9d983603ED0b4A1c0823bF3d
+NEXT_PUBLIC_ILENOID_ADDRESS=ST000000000000000000000000000000000000000
 
 # WalletConnect (Optional but recommended)
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
@@ -222,7 +222,7 @@ See the [contract README](./contract/README.md) for detailed instructions on:
 
 ### Key Contracts
 
-1. **CharityTracker.sol**: Main contract handling projects, donations, voting, and fund releases
+1. **Ilenoid.clar**: Main contract handling projects, donations, voting, and fund releases
 2. **NGO Registry**: Verified NGO management system
 
 ### Key Features
@@ -281,7 +281,7 @@ hooks/
 
 ```
 contracts/
-├── CharityTracker.sol   # Main contract
+├── ilenoid.clar   # Main contract
 ├── interfaces/          # Contract interfaces
 ├── libraries/           # Shared libraries
 └── types/              # Data structures
@@ -388,11 +388,11 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 🌟 Acknowledgments
 
-- [Base](https://base.org) for the amazing L2 platform
-- [OpenZeppelin](https://openzeppelin.com) for secure contract libraries
-- [Wagmi](https://wagmi.sh) for excellent Web3 React hooks
+- [Stacks](https://www.stacks.co) for the amazing Bitcoin L2 platform
+- [Hiro](https://www.hiro.so) for excellent developer tools and documentation
+- [Stacks.js](https://stacks.js.org) for Web3 integration
 - [Farcaster](https://farcaster.xyz) for social infrastructure
-- The entire Web3 community for inspiration and support
+- The entire Stacks and Web3 community for inspiration and support
 
 ---
 
@@ -408,7 +408,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [Update with your docs URL]
 - **Twitter/X**: [@YourHandle](https://twitter.com/YourHandle)
 - **Discord**: [Your Discord](https://discord.gg/your-server)
-- **GitHub**: [Your Repo](https://github.com/yourusername/tct)
+- **GitHub**: [Your Repo](https://github.com/yourusername/ilenoid)
 
 ---
 
@@ -425,8 +425,8 @@ If you find this project useful, please consider:
 
 <div align="center">
 
-**Built with ❤️ on Base**
+**Built with ❤️ on Stacks**
 
-[Base](https://base.org) • [Wagmi](https://wagmi.sh) • [Next.js](https://nextjs.org) • [Farcaster](https://farcaster.xyz)
+[Stacks](https://www.stacks.co) • [Stacks.js](https://stacks.js.org) • [Next.js](https://nextjs.org) • [Farcaster](https://farcaster.xyz)
 
 </div>
