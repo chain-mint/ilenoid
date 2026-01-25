@@ -164,3 +164,49 @@
     (ok (var-set contract-paused false))
   )
 )
+
+;; =============================================================
+;;                      NGO MANAGEMENT
+;; =============================================================
+
+;; Register a new NGO as verified
+;; Only callable by contract owner
+;; @param ngo: The principal address of the NGO to register
+;; @return: (ok true) on success
+(define-public (register-ngo (ngo principal))
+  (begin
+    ;; Check: Caller is owner
+    (asserts! (is-owner?) ERR_UNAUTHORIZED)
+    ;; Check: Contract is not paused
+    (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+    ;; Check: NGO is not already verified
+    (asserts! (not (default-to false (map-get? verified-ngos ngo))) ERR_NGO_ALREADY_VERIFIED)
+    ;; Set NGO as verified
+    (map-set verified-ngos ngo true)
+    (ok true)
+  )
+)
+
+;; Revoke verification status of an NGO
+;; Only callable by contract owner
+;; @param ngo: The principal address of the NGO to revoke
+;; @return: (ok true) on success
+(define-public (revoke-ngo (ngo principal))
+  (begin
+    ;; Check: Caller is owner
+    (asserts! (is-owner?) ERR_UNAUTHORIZED)
+    ;; Check: NGO is currently verified
+    (asserts! (default-to false (map-get? verified-ngos ngo)) ERR_NGO_NOT_VERIFIED)
+    ;; Revoke NGO verification
+    (map-set verified-ngos ngo false)
+    (ok true)
+  )
+)
+
+;; Check if an address is a verified NGO
+;; Read-only function
+;; @param ngo: The principal address to check
+;; @return: true if verified, false otherwise
+(define-read-only (is-verified-ngo (ngo principal))
+  (default-to false (map-get? verified-ngos ngo))
+)
