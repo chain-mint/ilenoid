@@ -131,3 +131,36 @@
   {project-id: uint, milestone-id: uint}
   uint
 )
+
+;; =============================================================
+;;                  ACCESS CONTROL & PAUSE
+;; =============================================================
+
+;; Private function to check if caller is the contract owner
+(define-private (is-owner?)
+  (is-eq tx-sender CONTRACT_OWNER)
+)
+
+;; Private helper to check if contract is not paused
+;; Returns true if not paused, false if paused
+(define-private (check-not-paused)
+  (not (var-get contract-paused))
+)
+
+;; Pause the contract (blocks donations and fund releases)
+;; Only callable by contract owner
+(define-public (pause)
+  (begin
+    (asserts! (is-owner?) ERR_UNAUTHORIZED)
+    (ok (var-set contract-paused true))
+  )
+)
+
+;; Unpause the contract
+;; Only callable by contract owner
+(define-public (unpause)
+  (begin
+    (asserts! (is-owner?) ERR_UNAUTHORIZED)
+    (ok (var-set contract-paused false))
+  )
+)
