@@ -11,14 +11,17 @@ import { useState } from "react";
  * Wraps the app with Wagmi, React Query, and Toast providers
  */
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Create QueryClient instance
+  // Create QueryClient instance with optimized cache configuration
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
+            gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection time (formerly cacheTime)
             refetchOnWindowFocus: false,
+            refetchOnMount: false, // Don't refetch on mount if data is fresh
+            retry: 1, // Retry failed requests once
           },
         },
       })
@@ -40,6 +43,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
               iconTheme: {
                 primary: "#2ECC71", // Emerald Green
                 secondary: "#ffffff",
+              },
+              className: "toast-success",
+              style: {
+                background: "#2ECC71", // Emerald Green
+                color: "#ffffff",
               },
             },
             error: {
