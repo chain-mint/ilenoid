@@ -1,307 +1,124 @@
 "use client";
 
-import { useConnection, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther, parseUnits, type Address } from "viem";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI } from "@/lib/contract";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
+import { callReadOnlyFunction, callContractFunction, ClarityValues } from "@/lib/stacks-contract";
+import { getStxAddress } from "@/lib/stacks-connect";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { parseContractError } from "@/lib/errors";
-
-/**
- * Minimal ERC20 ABI for approve and allowance functions
- */
-const ERC20_ABI = [
-  {
-    name: "approve",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-  {
-    name: "allowance",
-    type: "function",
-    stateMutability: "view",
-    inputs: [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-    ],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
 
 /**
  * Hook to fetch donor contribution
- * @param projectId - The project ID
- * @param donorAddress - The donor's address
- * @returns Contribution amount, loading state, and error state
  */
 export function useDonorContribution(
   projectId: number | bigint,
-  donorAddress: Address | undefined
+  donorAddress: string | undefined
 ): {
   contribution: bigint;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
 } {
-  const { data, isLoading, isError, error } = useReadContract({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "getDonorContribution",
-    args: [BigInt(projectId), donorAddress!],
-    query: {
-      enabled: projectId > 0 && !!donorAddress,
+  const senderAddress = getStxAddress();
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["donorContribution", projectId, donorAddress],
+    queryFn: async () => {
+      if (!donorAddress) return BigInt(0);
+
+      const result = await callReadOnlyFunction(
+        ILENOID_CONTRACT_INTERFACE.readOnly.getDonorContribution,
+        [
+          ClarityValues.uint(Number(projectId)),
+          ClarityValues.principal(donorAddress),
+        ],
+        senderAddress || undefined
+      );
+
+      return BigInt(result.value || result || 0);
     },
+    enabled: projectId > 0 && !!donorAddress && !!senderAddress,
   });
 
-  // Return contribution amount (default to 0 if no contribution)
-  const contribution: bigint = (data as bigint | undefined) ?? BigInt(0);
-
   return {
-    contribution,
+    contribution: data || BigInt(0),
     isLoading,
     isError,
-    error,
+    error: error as Error | null,
   };
 }
 
 /**
- * Hook for ETH donations
- * @param projectId - The project ID to donate to
- * @returns Donation function, transaction hash, loading states, success state, and error
+ * Hook for STX donations
  */
-export function useDonateETH(projectId: number | bigint): {
+export function useDonateSTX(projectId: number | bigint): {
   donate: (amount: string) => Promise<void>;
-  hash: `0x${string}` | undefined;
+  txId: string | undefined;
   isPending: boolean;
-  isConfirming: boolean;
   isSuccess: boolean;
   error: Error | null;
 } {
-  const { address } = useConnection();
   const queryClient = useQueryClient();
-  const writeContract = useWriteContract();
-  const hash = writeContract.data;
-  const isPending = writeContract.isPending;
-  const writeError = writeContract.error;
-  const {
-    isLoading: isConfirming,
-    isSuccess,
-    error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash,
-  });
-
   const prevSuccessRef = useRef(false);
-  const prevErrorRef = useRef<Error | null>(null);
 
-  const donate = async (amount: string) => {
-    if (!address) {
-      toast.error("Please connect your wallet");
-      return;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Invalid donation amount");
-      return;
-    }
-
-    try {
-      const amountWei = parseEther(amount);
-      
-      await writeContract.mutate({
-        address: CHARITY_TRACKER_ADDRESS,
-        abi: CHARITY_TRACKER_ABI,
-        functionName: "donate",
-        args: [BigInt(projectId)],
-        value: amountWei,
-      });
-    } catch (error) {
-      // Error is handled by writeError
-      console.error("Donation error:", error);
-    }
-  };
-
-  // Show toast notifications on success/error changes
-  useEffect(() => {
-    if (isSuccess && !prevSuccessRef.current) {
-      toast.success("Donation successful!");
-      // Invalidate project queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      prevSuccessRef.current = true;
-    }
-  }, [isSuccess, projectId, queryClient]);
-
-  useEffect(() => {
-    const currentError = writeError || receiptError;
-    if (currentError && currentError !== prevErrorRef.current) {
-      const errorMessage = parseContractError(currentError);
-      toast.error(errorMessage);
-      prevErrorRef.current = currentError;
-    }
-  }, [writeError, receiptError]);
-
-  // Reset refs when transaction starts
-  useEffect(() => {
-    if (isPending) {
-      prevSuccessRef.current = false;
-      prevErrorRef.current = null;
-    }
-  }, [isPending]);
-
-  return {
-    donate,
-    hash,
-    isPending,
-    isConfirming,
-    isSuccess,
-    error: writeError || receiptError,
-  };
-}
-
-/**
- * Hook for ERC20 donations
- * @param projectId - The project ID to donate to
- * @param tokenAddress - The ERC20 token address
- * @returns Donation function, transaction hash, loading states, success state, error, and allowance
- */
-export function useDonateERC20(
-  projectId: number | bigint,
-  tokenAddress: Address
-): {
-  donate: (amount: string, decimals?: number) => Promise<void>;
-  hash: `0x${string}` | undefined;
-  isPending: boolean;
-  isConfirming: boolean;
-  isSuccess: boolean;
-  error: Error | null;
-  allowance: bigint;
-} {
-  const { address } = useConnection();
-  const queryClient = useQueryClient();
-  const writeContract = useWriteContract();
-  const hash = writeContract.data;
-  const isPending = writeContract.isPending;
-  const writeError = writeContract.error;
   const {
-    isLoading: isConfirming,
+    mutate: donate,
+    data: txId,
+    isPending,
     isSuccess,
-    error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash,
-  });
+    error,
+  } = useMutation({
+    mutationFn: async (amount: string) => {
+      // Convert amount to microSTX (1 STX = 1,000,000 microSTX)
+      const amountMicroSTX = BigInt(Math.floor(parseFloat(amount) * 1_000_000));
+      const senderAddress = getStxAddress();
+      
+      if (!senderAddress) {
+        throw new Error("Wallet not connected");
+      }
 
-  // Check current allowance
-  const { data: allowance } = useReadContract({
-    address: tokenAddress,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: address ? [address, CHARITY_TRACKER_ADDRESS] : undefined,
-    query: {
-      enabled: !!address,
+      // Call the donate function with STX amount parameter
+      // The contract will use stx-transfer? to transfer from sender to contract
+      const { callContractFunctionWithSTX } = await import("@/lib/stacks-contract");
+      const txId = await callContractFunctionWithSTX(
+        ILENOID_CONTRACT_INTERFACE.public.donate,
+        [
+          ClarityValues.uint(Number(projectId)),
+          ClarityValues.uint(Number(amountMicroSTX)),
+        ],
+        amountMicroSTX,
+        senderAddress
+      );
+
+      return txId;
+    },
+    onSuccess: (txId) => {
+      toast.success(`Donation transaction submitted! TX: ${txId.substring(0, 8)}...`);
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["allProjects"] });
+      queryClient.invalidateQueries({ queryKey: ["donorContribution", projectId] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Donation failed: ${error.message}`);
     },
   });
 
-  const prevSuccessRef = useRef(false);
-  const prevErrorRef = useRef<Error | null>(null);
-
-  const donate = async (amount: string, decimals: number = 6) => {
-    if (!address) {
-      toast.error("Please connect your wallet");
-      return;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Invalid donation amount");
-      return;
-    }
-
-    try {
-      const amountParsed = parseUnits(amount, decimals);
-      const currentAllowance = (allowance as bigint | undefined) ?? BigInt(0);
-
-      // Step 1: Approve if needed
-      if (currentAllowance < amountParsed) {
-        toast.loading("Approving token...", { id: "approve" });
-        
-        // writeContract.mutate() returns void, hash is available via writeContract.data
-        writeContract.mutate({
-          address: tokenAddress,
-          abi: ERC20_ABI,
-          functionName: "approve",
-          args: [CHARITY_TRACKER_ADDRESS, amountParsed],
-        });
-
-        // Wait for approval confirmation
-        // Note: In a production app, you'd want to use a separate useWaitForTransactionReceipt
-        // hook for the approval step. This is a simplified version.
-        toast.loading("Waiting for approval confirmation...", { id: "approve" });
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        toast.dismiss("approve");
-      }
-
-      // Step 2: Donate
-      toast.loading("Processing donation...", { id: "donate" });
-      
-      await writeContract.mutate({
-        address: CHARITY_TRACKER_ADDRESS,
-        abi: CHARITY_TRACKER_ABI,
-        functionName: "donateERC20",
-        args: [BigInt(projectId), amountParsed],
-      });
-    } catch (error) {
-      toast.dismiss("approve");
-      toast.dismiss("donate");
-      // Error is handled by writeError
-      console.error("Donation error:", error);
-    }
-  };
-
-  // Show toast notifications on success/error changes
+  // Show success toast only once
   useEffect(() => {
     if (isSuccess && !prevSuccessRef.current) {
-      toast.dismiss("donate");
-      toast.success("Donation successful!");
-      // Invalidate project queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
       prevSuccessRef.current = true;
-    }
-  }, [isSuccess, projectId, queryClient]);
-
-  useEffect(() => {
-    const currentError = writeError || receiptError;
-    if (currentError && currentError !== prevErrorRef.current) {
-      toast.dismiss("approve");
-      toast.dismiss("donate");
-      const errorMessage = parseContractError(currentError);
-      toast.error(errorMessage);
-      prevErrorRef.current = currentError;
-    }
-  }, [writeError, receiptError]);
-
-  // Reset refs when transaction starts
-  useEffect(() => {
-    if (isPending) {
+    } else if (!isSuccess) {
       prevSuccessRef.current = false;
-      prevErrorRef.current = null;
     }
-  }, [isPending]);
+  }, [isSuccess]);
 
   return {
-    donate,
-    hash,
+    donate: (amount: string) => donate(amount),
+    txId,
     isPending,
-    isConfirming,
     isSuccess,
-    error: writeError || receiptError,
-    allowance: (allowance as bigint | undefined) ?? BigInt(0),
+    error: error as Error | null,
   };
 }
 
