@@ -6,7 +6,7 @@ import { useConnection } from "wagmi";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useIsVerifiedNGO } from "@/hooks/useNGO";
 import { type Address, parseEther, parseUnits, isAddress } from "viem";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI, USDC_ADDRESS } from "@/lib/contract";
+import { ILENOID_ADDRESS, ILENOID_ABI, USDC_ADDRESS } from "@/lib/contract";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { WalletConnect } from "@/components/web3/WalletConnect";
@@ -197,8 +197,8 @@ export default function CreateProjectPage() {
 
       // Call contract
       await writeContract.mutate({
-        address: CHARITY_TRACKER_ADDRESS,
-        abi: CHARITY_TRACKER_ABI,
+        address: ILENOID_ADDRESS,
+        abi: ILENOID_ABI,
         functionName: "createProject",
         args: [
           donationToken as Address,
@@ -240,7 +240,7 @@ export default function CreateProjectPage() {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold text-slate-grey mb-2">Create New Project</h1>
         <p className="text-slate-grey opacity-70 mb-6">
-          Create a transparent charity project with milestones
+          Create a transparent project with milestones
         </p>
 
         {/* NGO Verification Check */}
