@@ -6,7 +6,7 @@ import { useConnection } from "wagmi";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useIsVerifiedNGO } from "@/hooks/useNGO";
 import { type Address, parseEther, parseUnits, isAddress } from "viem";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI, USDC_ADDRESS } from "@/lib/contract";
+import { ILENOID_ADDRESS, ILENOID_ABI, USDC_ADDRESS } from "@/lib/contract";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -203,8 +203,8 @@ export function CreateProjectModal() {
 
       // Call contract
       await writeContract.mutate({
-        address: CHARITY_TRACKER_ADDRESS,
-        abi: CHARITY_TRACKER_ABI,
+        address: ILENOID_ADDRESS,
+        abi: ILENOID_ABI,
         functionName: "createProject",
         args: [
           donationToken as Address,
