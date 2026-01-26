@@ -1,7 +1,7 @@
 {
-  "name": "Transparent Charity Tracker",
-  "short_name": "TCT",
-  "description": "A transparent blockchain-based charity tracking platform built on Base",
+  "name": "Ilenoid",
+  "short_name": "Ilenoid",
+  "description": "A transparent blockchain-based charity tracking platform built on Stacks",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#003366",

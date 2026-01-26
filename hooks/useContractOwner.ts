@@ -1,36 +1,37 @@
 "use client";
 
-import { useConnection, useReadContract } from "wagmi";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI } from "@/lib/contract";
-import { type Address } from "viem";
+import { useQuery } from "@tanstack/react-query";
+import { callReadOnlyFunction } from "@/lib/stacks-contract";
+import { getStxAddress } from "@/lib/stacks-connect";
 
 /**
- * Hook to check if the current connected address is the contract owner
- * @returns Owner address, whether current user is owner, loading state, and error state
+ * Hook to get contract owner address
+ * Note: In Clarity, we can read data variables directly
  */
 export function useContractOwner(): {
-  owner: Address | undefined;
-  isOwner: boolean;
+  owner: string | undefined;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
 } {
-  const { address } = useConnection();
+  const senderAddress = getStxAddress();
 
-  const { data: owner, isLoading, isError, error } = useReadContract({
-    address: CHARITY_TRACKER_ADDRESS,
-    abi: CHARITY_TRACKER_ABI,
-    functionName: "owner",
+  // Note: This would need to be implemented in the contract as a read-only function
+  // For now, we'll return undefined as the contract doesn't expose this directly
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["contractOwner"],
+    queryFn: async () => {
+      // If contract has a get-owner function, call it here
+      // For now, return undefined
+      return undefined;
+    },
+    enabled: false, // Disabled until contract exposes owner
   });
 
-  const isOwner = address && owner ? address.toLowerCase() === (owner as Address).toLowerCase() : false;
-
   return {
-    owner: owner as Address | undefined,
-    isOwner,
+    owner: data,
     isLoading,
     isError,
-    error,
+    error: error as Error | null,
   };
 }
-

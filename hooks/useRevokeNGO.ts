@@ -1,78 +1,51 @@
 "use client";
 
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { useQueryClient } from "@tanstack/react-query";
-import { CHARITY_TRACKER_ADDRESS, CHARITY_TRACKER_ABI } from "@/lib/contract";
-import { type Address } from "viem";
-import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
+import { callContractFunction, ClarityValues } from "@/lib/stacks-contract";
 import toast from "react-hot-toast";
 
 /**
- * Hook to revoke an NGO's verification status
- * @param ngoAddress - The NGO address to revoke
- * @returns Revocation function, loading states, and transaction hash
+ * Hook to revoke NGO status (owner only)
  */
-export function useRevokeNGO(ngoAddress?: Address) {
+export function useRevokeNGO(): {
+  revokeNGO: (ngoAddress: string) => Promise<void>;
+  txId: string | undefined;
+  isPending: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+} {
   const queryClient = useQueryClient();
 
   const {
-    data: hash,
-    writeContract,
+    mutate: revokeNGO,
+    data: txId,
     isPending,
-    isError: isWriteError,
-    error: writeError,
-  } = useWriteContract();
-
-  const {
-    isLoading: isConfirming,
     isSuccess,
-    isError: isReceiptError,
-    error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash,
+    error,
+  } = useMutation({
+    mutationFn: async (ngoAddress: string) => {
+      const txId = await callContractFunction(
+        ILENOID_CONTRACT_INTERFACE.public.revokeNGO,
+        [ClarityValues.principal(ngoAddress)]
+      );
+
+      return txId;
+    },
+    onSuccess: (txId) => {
+      toast.success(`NGO revoked! TX: ${txId.substring(0, 8)}...`);
+      queryClient.invalidateQueries({ queryKey: ["isVerifiedNGO"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Revocation failed: ${error.message}`);
+    },
   });
 
-  const revokeNGO = async (address: Address) => {
-    try {
-      writeContract({
-        address: CHARITY_TRACKER_ADDRESS,
-        abi: CHARITY_TRACKER_ABI,
-        functionName: "revokeNGO",
-        args: [address],
-      });
-    } catch (error) {
-      console.error("Error revoking NGO:", error);
-      toast.error("Failed to revoke NGO");
-    }
-  };
-
-  // Handle success
-  useEffect(() => {
-    if (isSuccess && hash) {
-      toast.success("NGO verification revoked successfully!");
-      // Invalidate queries to refresh NGO status
-      queryClient.invalidateQueries({ queryKey: ["isVerifiedNGO"] });
-    }
-  }, [isSuccess, hash, queryClient]);
-
-  // Handle errors
-  useEffect(() => {
-    if (isWriteError && writeError) {
-      toast.error(writeError.message || "Failed to revoke NGO");
-    }
-    if (isReceiptError && receiptError) {
-      toast.error("Transaction failed");
-    }
-  }, [isWriteError, writeError, isReceiptError, receiptError]);
-
   return {
-    revokeNGO,
-    hash,
+    revokeNGO: (ngoAddress: string) => revokeNGO(ngoAddress),
+    txId,
     isPending,
-    isConfirming,
     isSuccess,
-    isError: isWriteError || isReceiptError,
-    error: writeError || receiptError,
+    error: error as Error | null,
   };
 }
-

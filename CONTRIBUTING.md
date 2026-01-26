@@ -1,12 +1,12 @@
-# Contributing to Transparent Charity Tracker
+# Contributing to Ilenoid
 
-Thank you for your interest in contributing to Transparent Charity Tracker! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Ilenoid! This document provides guidelines and instructions for contributing.
 
 ## 🤝 How to Contribute
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/yourusername/tct/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/yourusername/ilenoid/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -150,5 +150,5 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ## 🙏 Thank You
 
-Thank you for taking the time to contribute to Transparent Charity Tracker! Your efforts help make charity more transparent and accountable.
+Thank you for taking the time to contribute to Ilenoid! Your efforts help make charity more transparent and accountable.
 

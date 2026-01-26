@@ -1,96 +1,83 @@
 "use client";
 
-import { useConnection, useConnect, useDisconnect, useConnectors } from "wagmi";
 import { Button } from "@/components/ui/Button";
 import { formatAddress } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+import {
+  connectStacksWallet,
+  disconnectStacksWallet,
+  isWalletConnected,
+  getStxAddress,
+} from "@/lib/stacks-connect";
 
 /**
- * WalletConnect component for connecting and disconnecting wallets
+ * WalletConnect component for connecting and disconnecting Stacks wallets
  */
 export function WalletConnect() {
-  const { address, isConnected } = useConnection();
-  const connect = useConnect();
-  const disconnect = useDisconnect();
-  const connectors = useConnectors();
   const [mounted, setMounted] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   // Prevent hydration mismatch by only rendering after mount
   useEffect(() => {
     setMounted(true);
+    checkConnection();
   }, []);
 
-  // Handle connection errors
-  useEffect(() => {
-    if (connect.error) {
-      toast.error(
-        connect.error.message || "Failed to connect wallet. Please try again."
-      );
-    }
-  }, [connect.error]);
+  // Check connection status
+  const checkConnection = () => {
+    const connected = isWalletConnected();
+    const currentAddress = getStxAddress();
+    setIsConnected(connected);
+    setAddress(currentAddress);
+  };
 
-  // Handle successful connection
+  // Listen for connection changes
   useEffect(() => {
-    if (isConnected && address) {
-      toast.success("Wallet connected successfully!");
-    }
-  }, [isConnected, address]);
+    const interval = setInterval(() => {
+      checkConnection();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleConnect = async () => {
-    // Try to connect with the first available connector (usually injected/MetaMask)
-    if (connectors.length === 0) {
-      toast.error("No wallet connector available. Please install MetaMask or another Web3 wallet.");
-      return;
-    }
-
-    // Prioritize specific connectors over generic 'injected' connector
-    // Prefer MetaMask, then other specific wallets, then generic injected
-    let connector = connectors.find((c) => c.id === "io.metamask"); // MetaMask
-    if (!connector) {
-      connector = connectors.find((c) => c.id === "app.phantom"); // Phantom
-    }
-    if (!connector) {
-      connector = connectors.find((c) => c.id === "walletConnect"); // WalletConnect
-    }
-    if (!connector) {
-      // Fall back to first connector (usually generic injected)
-      connector = connectors[0];
-    }
-    
-    // Check if connector is ready (has provider)
+    setIsConnecting(true);
     try {
-      const provider = await connector.getProvider();
-      if (!provider) {
-        toast.error("Wallet not detected. Please install MetaMask or another Web3 wallet extension.");
-        return;
+      const userData = await connectStacksWallet();
+      if (userData) {
+        const stxAddress = userData.addresses?.stx?.[0]?.address;
+        if (stxAddress) {
+          setAddress(stxAddress);
+          setIsConnected(true);
+          toast.success("Wallet connected successfully!");
+        } else {
+          toast.error("Failed to get wallet address");
+        }
+      } else {
+        toast.error("Failed to connect wallet. Please try again.");
       }
-    } catch (error) {
-      toast.error("Unable to connect to wallet. Please ensure your wallet extension is unlocked.");
-      return;
-    }
-
-    // Attempt connection
-    try {
-      connect.mutate({ connector });
-    } catch (error) {
-      toast.error("Failed to connect wallet. Please try again.");
+    } catch (error: any) {
+      console.error("Connection error:", error);
+      toast.error(error.message || "Failed to connect wallet");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
   const handleDisconnect = () => {
-    disconnect.mutate();
+    disconnectStacksWallet();
+    setAddress(null);
+    setIsConnected(false);
     toast.success("Wallet disconnected");
   };
 
   // Don't render until mounted to prevent hydration mismatch
   if (!mounted) {
     return (
-      <Button
-        variant="primary"
-        size="md"
-        disabled
-      >
+      <Button variant="primary" size="md" disabled>
         Connect Wallet
       </Button>
     );
@@ -109,7 +96,7 @@ export function WalletConnect() {
           variant="secondary"
           size="sm"
           onClick={handleDisconnect}
-          disabled={connect.isPending || disconnect.isPending}
+          disabled={isConnecting}
         >
           Disconnect
         </Button>
@@ -122,11 +109,10 @@ export function WalletConnect() {
       variant="primary"
       size="md"
       onClick={handleConnect}
-      isLoading={connect.isPending}
-      disabled={connect.isPending}
+      isLoading={isConnecting}
+      disabled={isConnecting}
     >
       Connect Wallet
     </Button>
   );
 }
-
