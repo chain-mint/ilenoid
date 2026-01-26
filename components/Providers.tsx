@@ -1,14 +1,13 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { wagmiConfig } from "@/lib/wagmi";
 import { Toaster } from "react-hot-toast";
 import { useState } from "react";
 
 /**
  * Root providers component
- * Wraps the app with Wagmi, React Query, and Toast providers
+ * Wraps the app with React Query and Toast providers
+ * Note: Stacks uses @stacks/connect instead of wagmi
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   // Create QueryClient instance with optimized cache configuration
@@ -28,38 +27,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: "#333333",
+            color: "#ffffff",
+          },
+          success: {
+            iconTheme: {
+              primary: "#2ECC71", // Emerald Green
+              secondary: "#ffffff",
+            },
+            className: "toast-success",
             style: {
-              background: "#333333",
+              background: "#2ECC71", // Emerald Green
               color: "#ffffff",
             },
-            success: {
-              iconTheme: {
-                primary: "#2ECC71", // Emerald Green
-                secondary: "#ffffff",
-              },
-              className: "toast-success",
-              style: {
-                background: "#2ECC71", // Emerald Green
-                color: "#ffffff",
-              },
+          },
+          error: {
+            iconTheme: {
+              primary: "#E74C3C", // Charity Red
+              secondary: "#ffffff",
             },
-            error: {
-              iconTheme: {
-                primary: "#E74C3C", // Charity Red
-                secondary: "#ffffff",
-              },
-            },
-          }}
-        />
-      </QueryClientProvider>
-    </WagmiProvider>
+          },
+        }}
+      />
+    </QueryClientProvider>
   );
 }
 
