@@ -347,3 +347,56 @@
     )
   )
 )
+
+;; =============================================================
+;;                  SIP-010 TOKEN DONATIONS
+;; =============================================================
+
+;; Donate SIP-010 fungible tokens to a project
+;; @param project-id: The ID of the project to donate to
+;; @param token-contract: The principal of the SIP-010 token contract
+;; @param amount: The amount of tokens to donate
+;; @return: (ok amount) on success
+;; @dev Only works for projects that accept token donations (donation-token matches token-contract).
+;;      Calls the SIP-010 transfer function via contract-call?.
+;;      Updates all donation accounting.
+(define-public (donate-token
+  (project-id uint)
+  (token-contract principal)
+  (amount uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (begin
+      ;; Check: Project exists (already checked via unwrap!)
+      ;; Check: Project is active
+      (asserts! (get is-active project) ERR_PROJECT_NOT_ACTIVE)
+      ;; Check: Project is not completed
+      (asserts! (not (get is-completed project)) ERR_PROJECT_COMPLETED)
+      ;; Check: Amount > 0
+      (asserts! (> amount u0) ERR_INVALID_DONATION_AMOUNT)
+      ;; Check: Project accepts tokens (donation-token is not none)
+      (asserts! (is-some (get donation-token project)) ERR_INVALID_DONATION_TOKEN)
+      ;; Check: Token contract matches project's donation-token
+      (asserts! (is-eq token-contract (unwrap-panic (get donation-token project))) ERR_INVALID_DONATION_TOKEN)
+      ;; Check: Contract is not paused
+      (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+      ;; Call SIP-010 transfer function: transfer from tx-sender to contract
+      ;; SIP-010 signature: (transfer (uint principal principal (optional (buff 34))) (response bool uint))
+      (try! (contract-call? token-contract transfer amount tx-sender current-contract none))
+      ;; Update donor contributions
+      (let ((current-contribution (default-to u0 (map-get? donor-contributions {project-id: project-id, donor: tx-sender}))))
+        (map-set donor-contributions {project-id: project-id, donor: tx-sender} (+ current-contribution amount))
+      )
+      ;; Update total project donations
+      (let ((current-total (default-to u0 (map-get? total-project-donations project-id))))
+        (map-set total-project-donations project-id (+ current-total amount))
+      )
+      ;; Update project's total-donated and balance
+      (map-set projects project-id (merge project {
+        total-donated: (+ (get total-donated project) amount),
+        balance: (+ (get balance project) amount)
+      }))
+      (ok amount)
+    )
+  )
+)
