@@ -49,7 +49,9 @@ export function useReleaseFunds(
   });
 
   return {
-    releaseFunds: () => releaseFunds(),
+    releaseFunds: async () => {
+      await releaseFunds();
+    },
     txId,
     isPending,
     isSuccess,
