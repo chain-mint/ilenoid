@@ -22,7 +22,7 @@ export function useHasVoted(
   const senderAddress = getStxAddress();
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["hasVoted", projectId, milestoneId, senderAddress],
+    queryKey: ["hasVoted", Number(projectId), Number(milestoneId), senderAddress],
     queryFn: async () => {
       if (!senderAddress) return false;
 
@@ -86,9 +86,9 @@ export function useVoteOnMilestone(
     onSuccess: (txId) => {
       toast.success(`Vote submitted! TX: ${txId.substring(0, 8)}...`);
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["hasVoted", projectId, milestoneId] });
-      queryClient.invalidateQueries({ queryKey: ["projectMilestones", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["hasVoted", Number(projectId), Number(milestoneId)] });
+      queryClient.invalidateQueries({ queryKey: ["projectMilestones", Number(projectId)] });
+      queryClient.invalidateQueries({ queryKey: ["project", Number(projectId)] });
     },
     onError: (error: Error) => {
       toast.error(`Vote failed: ${error.message}`);
