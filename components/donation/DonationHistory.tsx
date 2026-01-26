@@ -1,6 +1,6 @@
 "use client";
 
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { type Address, isAddress } from "viem";
 import { useDonorContribution } from "@/hooks/useDonation";
 import { useProject } from "@/hooks/useProject";
