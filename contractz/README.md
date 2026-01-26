@@ -28,36 +28,6 @@ Smart contracts for the Ilenoid transparent charity tracker on Stacks blockchain
 - **Epoch**: 3.3
 - **Status**: ✅ Successfully deployed and confirmed
 
-## Project Structure
-
-```
-contractz/
-├── contracts/              # Clarity smart contracts
-│   ├── ilenoid.clar        # Main contract (753 lines, deployed ✅)
-│   └── ngo-registry.clar   # NGO registry contract (deployed ✅)
-├── tests/                  # TypeScript test files (37 tests)
-│   ├── ilenoid.test.ts     # Main contract tests
-│   ├── helpers.ts          # Test utilities
-│   └── basic.test.ts       # Basic tests
-├── deployments/            # Deployment plans
-│   ├── default.testnet-plan.yaml  # Testnet deployment (deployed ✅)
-│   ├── default.devnet-plan.yaml
-│   └── default.simnet-plan.yaml
-├── settings/               # Network configuration
-│   ├── Devnet.toml
-│   ├── Testnet.toml        # Configured with encrypted mnemonic
-│   └── Mainnet.toml
-├── docs/                   # Documentation
-│   ├── IMPLEMENTATION_PHASES.md
-│   └── PHASE*.md           # Phase completion docs
-├── Clarinet.toml           # Project manifest
-├── package.json             # Dependencies
-├── tsconfig.json           # TypeScript config
-├── vitest.config.ts        # Vitest config
-├── README.md               # This file
-└── DEPLOYMENT_GUIDE.md     # Deployment instructions
-```
-
 ## Configuration
 
 - **Clarity Version**: 4
@@ -124,46 +94,6 @@ npm run test:report
 # Start devnet
 clarinet devnet start
 ```
-
-## Migration Status
-
-This project is migrating from Base L2 (Solidity) to Stacks (Clarity).
-
-### Documentation
-
-- **[IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md)**: Detailed phased implementation plan
-- **[MIGRATION_QUICK_REFERENCE.md](./MIGRATION_QUICK_REFERENCE.md)**: Quick reference for Solidity → Clarity migration
-
-### Current Status
-
-- ✅ Project structure created
-- ✅ Configuration updated (Clarity 4, epoch "latest")
-- ✅ Dependencies updated to latest versions
-- ✅ Contracts fully implemented (753 lines)
-- ✅ Comprehensive test suite (37 tests)
-- ✅ **Testnet deployment successful**
-- ✅ Frontend deployed and live
-- ⏳ Mainnet deployment (pending final testing)
-
-## Implementation Phases
-
-See [IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md) for the complete 15-phase implementation plan:
-
-1. **Phase 1**: Project Setup & Configuration
-2. **Phase 2**: Core Data Structures & Constants
-3. **Phase 3**: Access Control & Pause Mechanism
-4. **Phase 4**: NGO Management
-5. **Phase 5**: Project Creation
-6. **Phase 6**: STX Donations
-7. **Phase 7**: SIP-010 Token Donations
-8. **Phase 8**: Milestone Voting
-9. **Phase 9**: Fund Release
-10. **Phase 10**: Emergency Controls
-11. **Phase 11**: Read-Only Functions
-12. **Phase 12**: Testing Infrastructure
-13. **Phase 13**: Contract Validation & Optimization
-14. **Phase 14**: Documentation
-15. **Phase 15**: Deployment Preparation
 
 ## Key Features
 

@@ -162,7 +162,7 @@ We chose **Stacks** as our platform because:
 
 1. **Clone the repository:**
 ```bash
-git clone <repository-url>
+git clone git@github.com:chain-mint/ilenoid.git
 cd ilenoid
 ```
 
@@ -244,49 +244,6 @@ See [contractz documentation](./contractz/README.md) for more details.
 
 ---
 
-## 🏛️ Architecture
-
-### Frontend Architecture
-
-```
-app/
-├── page.tsx              # Home page with project listing
-├── project/
-│   ├── [id]/            # Project detail page
-│   └── create/          # Create project page
-├── ngo/
-│   ├── dashboard/       # NGO dashboard
-│   └── register/        # NGO registration
-├── admin/
-│   └── ngos/            # Admin panel for NGO management
-└── donate/
-    └── [id]/            # Donation page
-
-components/
-├── project/             # Project-related components
-├── donation/            # Donation components
-├── web3/                # Web3 wallet components
-└── ui/                  # Reusable UI components
-
-hooks/
-├── useProject.ts        # Project data fetching
-├── useDonation.ts       # Donation logic
-├── useVoting.ts         # Voting logic
-└── useNGO.ts            # NGO verification
-```
-
-### Smart Contract Architecture
-
-```
-contracts/
-├── ilenoid.clar   # Main contract
-├── interfaces/          # Contract interfaces
-├── libraries/           # Shared libraries
-└── types/              # Data structures
-```
-
----
-
 ## 🔒 Security
 
 ### Security Features
@@ -343,47 +300,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ---
 
-## 📊 Project Status
-
-### ✅ Completed
-- Smart contract development and testing (Clarity 4)
-- Frontend application (Next.js) - [Live on Netlify](https://ilenoid.netlify.app/)
-- Wallet integration (@stacks/connect)
-- NGO registration system
-- Donation system (STX + SIP-010 tokens)
-- Voting system with weighted votes
-- Milestone management
-- Testnet deployment
-- Comprehensive test suite (37 tests)
-
-### 🚧 In Progress
-- Mainnet deployment (pending final testing)
-- Production optimizations
-- Analytics dashboard
-
-### 📋 Planned
-- Mobile app (React Native)
-- Additional SIP-010 token support
-- Governance improvements
-- Multi-language support
-
----
-
-## 📈 Metrics & Impact
-
-### On-Chain Metrics
-- **Total Projects**: [Update with live data]
-- **Total Donations**: [Update with live data]
-- **Active NGOs**: [Update with live data]
-- **Total Votes Cast**: [Update with live data]
-
-### GitHub Metrics
-- **Stars**: [Update]
-- **Forks**: [Update]
-- **Contributors**: [Update]
-
----
-
 ## 🌟 Acknowledgments
 
 - [Stacks](https://www.stacks.co) for the amazing Bitcoin L2 platform
@@ -422,7 +338,6 @@ If you find this project useful, please consider:
 
 <div align="center">
 
-**Built with ❤️ on Stacks**
 
 [Stacks](https://www.stacks.co) • [Stacks.js](https://stacks.js.org) • [Next.js](https://nextjs.org) • [Farcaster](https://farcaster.xyz)
 
