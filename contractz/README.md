@@ -178,10 +178,9 @@ See [IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md) for the complete 15-p
 
 ## Source Contract
 
-The original Solidity implementation is located in `/contract` directory:
-- `contract/src/CharityTracker.sol` - Main contract
-- `contract/src/types/DataStructures.sol` - Data structures
-- `contract/src/libraries/Errors.sol` - Error definitions
+This Clarity implementation is the primary and active contract for the Ilenoid project on Stacks blockchain.
+
+**Note**: A previous Solidity implementation for Base blockchain has been removed as the project has fully migrated to Stacks.
 
 ## Deployment
 
