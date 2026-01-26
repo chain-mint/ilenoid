@@ -42,7 +42,9 @@ export function useRegisterNGO(): {
   });
 
   return {
-    registerNGO: (ngoAddress: string) => registerNGO(ngoAddress),
+    registerNGO: async (ngoAddress: string) => {
+      await registerNGO(ngoAddress);
+    },
     txId,
     isPending,
     isSuccess,
