@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { useRouter } from "next/navigation";
 import { useIsVerifiedNGO } from "@/hooks/useNGO";
 import { WalletConnect } from "@/components/web3/WalletConnect";

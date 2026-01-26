@@ -49,6 +49,6 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^5",
     "@stacks/clarinet-sdk": "^3.9.1",
-    "clarinet": "^1.0.0"
+    "clarinet": "^0.12.6"
   }
 }
