@@ -42,7 +42,9 @@ export function useRevokeNGO(): {
   });
 
   return {
-    revokeNGO: (ngoAddress: string) => revokeNGO(ngoAddress),
+    revokeNGO: async (ngoAddress: string) => {
+      await revokeNGO(ngoAddress);
+    },
     txId,
     isPending,
     isSuccess,
