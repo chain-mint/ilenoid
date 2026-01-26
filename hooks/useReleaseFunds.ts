@@ -40,8 +40,8 @@ export function useReleaseFunds(
     },
     onSuccess: (txId) => {
       toast.success(`Funds released! TX: ${txId.substring(0, 8)}...`);
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["projectMilestones", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["project", Number(projectId)] });
+      queryClient.invalidateQueries({ queryKey: ["projectMilestones", Number(projectId)] });
     },
     onError: (error: Error) => {
       toast.error(`Release failed: ${error.message}`);

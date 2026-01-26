@@ -25,7 +25,7 @@ export function useProject(projectId: number | bigint): {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["project", projectId],
+    queryKey: ["project", Number(projectId)],
     queryFn: async () => {
       if (!projectId || projectId <= 0) return null;
       
@@ -150,7 +150,7 @@ export function useProjectMilestones(projectId: number | bigint): {
   // For Stacks, we need to get milestone count from the project data
   // Since milestoneCount might not be in the Project type, we'll fetch milestones differently
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["projectMilestones", projectId, project?.id],
+    queryKey: ["projectMilestones", Number(projectId), project?.id ? Number(project.id) : undefined],
     queryFn: async () => {
       if (!project) return [];
       
@@ -181,13 +181,20 @@ export function useProjectMilestones(projectId: number | bigint): {
         })
       );
 
-      return milestones.filter((m): m is Milestone => m !== null);
+      return milestones.filter((m): m is any => m !== null);
     },
     enabled: !!project && !!senderAddress,
   });
 
+  // Convert serialized BigInt strings back to BigInt
+  const milestones = (data || []).map((m: any) => ({
+    ...m,
+    amountRequested: toBigInt(m.amountRequested),
+    voteWeight: toBigInt(m.voteWeight),
+  }));
+
   return {
-    milestones: data || [],
+    milestones,
     isLoading: isLoading || isLoadingProject,
     isError,
     error: error as Error | null,

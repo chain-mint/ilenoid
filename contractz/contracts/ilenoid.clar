@@ -400,3 +400,318 @@
     )
   )
 )
+
+;; =============================================================
+;;                    MILESTONE VOTING
+;; =============================================================
+
+;; Vote on the current milestone for a project
+;; @param project-id: The ID of the project to vote on
+;; @return: (ok vote-weight) on success
+;; @dev Only donors with contributions can vote. Vote weight equals total contribution.
+;;      One vote per milestone per donor. Snapshot is taken on first vote to prevent
+;;      donations after voting starts from affecting the quorum calculation.
+(define-public (vote-on-milestone
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((current-milestone-id (get current-milestone project)))
+      (let ((milestone-count (unwrap! (map-get? project-milestone-count project-id) ERR_NO_CURRENT_MILESTONE)))
+        (let ((milestone (unwrap! (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id}) ERR_NO_CURRENT_MILESTONE)))
+          (let ((donor-contribution (default-to u0 (map-get? donor-contributions {project-id: project-id, donor: tx-sender}))))
+            (begin
+              ;; Check: Project exists (already checked via unwrap!)
+              ;; Check: Current milestone exists (current-milestone-id < milestone-count)
+              (asserts! (< current-milestone-id milestone-count) ERR_NO_CURRENT_MILESTONE)
+              ;; Check: Milestone not approved
+              (asserts! (not (get approved milestone)) ERR_MILESTONE_ALREADY_APPROVED)
+              ;; Check: Donor has contribution > 0
+              (asserts! (> donor-contribution u0) ERR_NO_CONTRIBUTION)
+              ;; Check: Donor hasn't voted on this milestone
+              (asserts! (not (default-to false (map-get? has-voted {project-id: project-id, milestone-id: current-milestone-id, donor: tx-sender}))) ERR_ALREADY_VOTED)
+              ;; Check: Contract is not paused
+              (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+              ;; Snapshot Logic: Capture total donations at vote start (first vote only)
+              ;; If snapshot doesn't exist (is none), this is the first vote
+              (let ((existing-snapshot (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id})))
+                (if (is-none existing-snapshot)
+                  (let ((total-donations (default-to u0 (map-get? total-project-donations project-id))))
+                    (map-set milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id} total-donations)
+                  )
+                )
+              )
+              ;; Calculate vote weight from donor contributions
+              (let ((vote-weight donor-contribution))
+                ;; Update milestone's vote-weight
+                (let ((current-vote-weight (get vote-weight milestone)))
+                  (map-set milestones {project-id: project-id, milestone-id: current-milestone-id} (merge milestone {
+                    vote-weight: (+ current-vote-weight vote-weight)
+                  }))
+                )
+                ;; Set has-voted map entry
+                (map-set has-voted {project-id: project-id, milestone-id: current-milestone-id, donor: tx-sender} true)
+                (ok vote-weight)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+;; =============================================================
+;;                      FUND RELEASE
+;; =============================================================
+
+;; Release funds for the current milestone
+;; @param project-id: The ID of the project to release funds for
+;; @return: (ok amount-released) on success
+;; @dev Only the project's NGO can release funds. Requires >50% quorum from donors.
+;;      Transfers funds (STX or SIP-010 token) to NGO.
+;;      Marks project as completed if this is the final milestone.
+(define-public (release-funds
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((current-milestone-id (get current-milestone project)))
+      (let ((milestone-count (unwrap! (map-get? project-milestone-count project-id) ERR_NO_CURRENT_MILESTONE)))
+        (let ((milestone (unwrap! (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id}) ERR_NO_CURRENT_MILESTONE)))
+          (let ((amount-requested (get amount-requested milestone)))
+            (begin
+              ;; Check: Project exists (already checked via unwrap!)
+              ;; Check: Caller is project's NGO
+              (asserts! (is-eq tx-sender (get ngo project)) ERR_NOT_PROJECT_NGO)
+              ;; Check: Current milestone exists (current-milestone-id < milestone-count)
+              (asserts! (< current-milestone-id milestone-count) ERR_NO_CURRENT_MILESTONE)
+              ;; Check: Milestone not approved
+              (asserts! (not (get approved milestone)) ERR_MILESTONE_ALREADY_APPROVED)
+              ;; Check: Milestone funds not released
+              (asserts! (not (get funds-released milestone)) ERR_MILESTONE_ALREADY_RELEASED)
+              ;; Check: Snapshot exists (voting has started)
+              (let ((snapshot (unwrap! (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id}) ERR_QUORUM_NOT_MET)))
+                ;; Check: Quorum is met (>50% of snapshot)
+                ;; vote-weight must be > (snapshot * 50) / 100
+                ;; This is equivalent to: vote-weight * 100 > snapshot * 50
+                (let ((vote-weight (get vote-weight milestone)))
+                  (asserts! (> (* vote-weight u100) (* snapshot u50)) ERR_QUORUM_NOT_MET)
+                  ;; Check: Project balance >= milestone amount
+                  (asserts! (>= (get balance project) amount-requested) ERR_INSUFFICIENT_PROJECT_BALANCE)
+                  ;; Check: Contract is not paused
+                  (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+                  ;; Mark milestone as approved and released
+                  (map-set milestones {project-id: project-id, milestone-id: current-milestone-id} (merge milestone {
+                    approved: true,
+                    funds-released: true
+                  }))
+                  ;; Decrement project balance
+                  (let ((new-balance (- (get balance project) amount-requested)))
+                    ;; Increment current-milestone
+                    (let ((new-current-milestone (+ current-milestone-id u1)))
+                      ;; Check if this is the final milestone
+                      (let ((is-final-milestone (is-eq new-current-milestone milestone-count)))
+                        ;; Update project: balance, current-milestone, and completion status
+                        (map-set projects project-id (merge project {
+                          balance: new-balance,
+                          current-milestone: new-current-milestone,
+                          is-completed: is-final-milestone,
+                          is-active: (not is-final-milestone)
+                        }))
+                        ;; Transfer funds: STX or SIP-010 token
+                        (let ((donation-token (get donation-token project)))
+                          (match donation-token
+                            ;; STX transfer: use stx-transfer? from contract
+                            none
+                            (try! (as-contract (stx-transfer? amount-requested current-contract (get ngo project))))
+                            ;; SIP-010 token transfer: call token contract's transfer function
+                            (some token-contract)
+                            (try! (as-contract (contract-call? token-contract transfer amount-requested current-contract (get ngo project) none)))
+                          )
+                        )
+                        (ok amount-requested)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+;; =============================================================
+;;                  EMERGENCY CONTROLS
+;; =============================================================
+
+;; Emergency withdrawal of funds from a project (only when paused)
+;; @param project-id: The ID of the project to withdraw funds from
+;; @return: (ok amount-withdrawn) on success
+;; @dev Only owner can withdraw. Only works when contract is paused.
+;;      Withdraws all remaining balance from the project to the owner.
+;;      This is a last resort for stuck funds.
+(define-public (emergency-withdraw
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((project-balance (get balance project)))
+      (begin
+        ;; Check: Owner only
+        (asserts! (is-owner?) ERR_UNAUTHORIZED)
+        ;; Check: Contract is paused
+        (asserts! (var-get contract-paused) ERR_CONTRACT_PAUSED)
+        ;; Check: Project exists (already checked via unwrap!)
+        ;; Set project balance to 0
+        (map-set projects project-id (merge project {
+          balance: u0
+        }))
+        ;; Withdraw all remaining balance: STX or SIP-010 token
+        (let ((donation-token (get donation-token project)))
+          (match donation-token
+            ;; STX transfer: use stx-transfer? from contract to owner
+            none
+            (try! (as-contract (stx-transfer? project-balance current-contract CONTRACT_OWNER)))
+            ;; SIP-010 token transfer: call token contract's transfer function
+            (some token-contract)
+            (try! (as-contract (contract-call? token-contract transfer project-balance current-contract CONTRACT_OWNER none)))
+          )
+        )
+        (ok project-balance)
+      )
+    )
+  )
+)
+
+;; =============================================================
+;;                  READ-ONLY FUNCTIONS
+;; =============================================================
+
+;; =============================================================
+;;                  PROJECT QUERIES
+;; =============================================================
+
+;; Get project information
+;; @param project-id: The ID of the project
+;; @return: The Project struct containing all project data, or none if not found
+(define-read-only (get-project (project-id uint))
+  (map-get? projects project-id)
+)
+
+;; Get the total number of milestones for a project
+;; @param project-id: The ID of the project
+;; @return: The number of milestones, or none if project not found
+(define-read-only (get-project-milestone-count (project-id uint))
+  (map-get? project-milestone-count project-id)
+)
+
+;; Get the project counter (total number of projects created)
+;; @return: The current project counter value
+(define-read-only (get-project-counter)
+  (var-get project-counter)
+)
+
+;; =============================================================
+;;                  MILESTONE QUERIES
+;; =============================================================
+
+;; Get milestone information
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @return: The Milestone struct containing all milestone data, or none if not found
+(define-read-only (get-milestone (project-id uint) (milestone-id uint))
+  (map-get? milestones {project-id: project-id, milestone-id: milestone-id})
+)
+
+;; Get the current milestone for a project
+;; @param project-id: The ID of the project
+;; @return: The current Milestone struct, or none if project/milestone not found
+(define-read-only (get-current-milestone (project-id uint))
+  (let ((project (map-get? projects project-id)))
+    (match project
+      (some proj)
+      (let ((current-milestone-id (get current-milestone proj)))
+        (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id})
+      )
+      none
+      none
+    )
+  )
+)
+
+;; =============================================================
+;;                  DONATION QUERIES
+;; =============================================================
+
+;; Get a donor's total contribution to a project
+;; @param project-id: The ID of the project
+;; @param donor: The principal address of the donor
+;; @return: The total amount contributed by the donor (0 if no contribution)
+(define-read-only (get-donor-contribution (project-id uint) (donor principal))
+  (default-to u0 (map-get? donor-contributions {project-id: project-id, donor: donor}))
+)
+
+;; Get the total donations received for a project
+;; @param project-id: The ID of the project
+;; @return: The total donations amount (0 if project not found)
+(define-read-only (get-total-project-donations (project-id uint))
+  (default-to u0 (map-get? total-project-donations project-id))
+)
+
+;; Check if a donor has voted on a specific milestone
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @param donor: The principal address of the donor
+;; @return: True if the donor has voted, false otherwise
+(define-read-only (has-donor-voted (project-id uint) (milestone-id uint) (donor principal))
+  (default-to false (map-get? has-voted {project-id: project-id, milestone-id: milestone-id, donor: donor}))
+)
+
+;; =============================================================
+;;                  VOTING STATUS
+;; =============================================================
+
+;; Get voting status for a milestone
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @return: A tuple containing:
+;;   - vote-weight: The total vote weight for this milestone
+;;   - snapshot: The donation snapshot at vote start
+;;   - can-release: True if quorum is met and balance is sufficient for release
+;;   Returns none if milestone not found
+(define-read-only (get-milestone-vote-status (project-id uint) (milestone-id uint))
+  (let ((milestone (map-get? milestones {project-id: project-id, milestone-id: milestone-id})))
+    (match milestone
+      (some ms)
+      (let ((vote-weight (get vote-weight ms))
+            (amount-requested (get amount-requested ms))
+            (snapshot (default-to u0 (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: milestone-id}))))
+        (let ((project (map-get? projects project-id)))
+          (match project
+            (some proj)
+            (let ((balance (get balance proj)))
+              ;; can-release = (voteWeight > 50% of snapshot) && (balance >= amountRequested)
+              (let ((quorum-met (and (> snapshot u0) (> (* vote-weight u100) (* snapshot u50))))
+                    (sufficient-balance (>= balance amount-requested)))
+                (ok {
+                  vote-weight: vote-weight,
+                  snapshot: snapshot,
+                  can-release: (and quorum-met sufficient-balance)
+                })
+              )
+            )
+            none
+            (ok {
+              vote-weight: vote-weight,
+              snapshot: snapshot,
+              can-release: false
+            })
+          )
+        )
+      )
+      none
+      none
+    )
+  )
+)

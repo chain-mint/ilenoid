@@ -22,7 +22,7 @@ export function useDonorContribution(
   const senderAddress = getStxAddress();
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["donorContribution", projectId, donorAddress],
+    queryKey: ["donorContribution", Number(projectId), donorAddress],
     queryFn: async () => {
       if (!donorAddress) return BigInt(0);
 
@@ -35,13 +35,18 @@ export function useDonorContribution(
         senderAddress || undefined
       );
 
-      return BigInt(result.value || result || 0);
+      const contribution = BigInt(result.value || result || 0);
+      // Serialize BigInt to string for React Query
+      return contribution.toString();
     },
     enabled: projectId > 0 && !!donorAddress && !!senderAddress,
   });
 
+  // Convert serialized string back to BigInt
+  const contribution = data ? BigInt(data) : BigInt(0);
+
   return {
-    contribution: data || BigInt(0),
+    contribution,
     isLoading,
     isError,
     error: error as Error | null,
@@ -95,9 +100,9 @@ export function useDonateSTX(projectId: number | bigint): {
     onSuccess: (txId) => {
       toast.success(`Donation transaction submitted! TX: ${txId.substring(0, 8)}...`);
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["project", Number(projectId)] });
       queryClient.invalidateQueries({ queryKey: ["allProjects"] });
-      queryClient.invalidateQueries({ queryKey: ["donorContribution", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["donorContribution", Number(projectId)] });
     },
     onError: (error: Error) => {
       toast.error(`Donation failed: ${error.message}`);

@@ -26,12 +26,13 @@ export function formatAddress(address: string): string {
 
 /**
  * Format wei amount to ETH string
- * @param amount - Amount in wei (bigint)
+ * @param amount - Amount in wei (bigint or string)
  * @returns Formatted ETH string with appropriate decimals
  */
-export function formatEther(amount: bigint): string {
+export function formatEther(amount: bigint | string | number): string {
   try {
-    return viemFormatEther(amount);
+    const bigIntAmount = toBigInt(amount);
+    return viemFormatEther(bigIntAmount);
   } catch (error) {
     return "0";
   }
@@ -39,12 +40,13 @@ export function formatEther(amount: bigint): string {
 
 /**
  * Format USDC amount (6 decimals)
- * @param amount - Amount in smallest USDC unit (bigint)
+ * @param amount - Amount in smallest USDC unit (bigint or string)
  * @returns Formatted USDC string with 6 decimals
  */
-export function formatUSDC(amount: bigint): string {
+export function formatUSDC(amount: bigint | string | number): string {
   try {
-    return formatUnits(amount, 6);
+    const bigIntAmount = toBigInt(amount);
+    return formatUnits(bigIntAmount, 6);
   } catch (error) {
     return "0";
   }
@@ -52,19 +54,20 @@ export function formatUSDC(amount: bigint): string {
 
 /**
  * Format number with commas for large numbers
- * @param num - Number or bigint to format
+ * @param num - Number, bigint, or string to format
  * @returns Formatted string with commas
  */
-export function formatNumber(num: number | bigint): string {
-  const numStr = num.toString();
+export function formatNumber(num: number | bigint | string): string {
+  // Convert to string if it's a bigint or number
+  const numStr = typeof num === "string" ? num : num.toString();
   
-  // Handle bigint
-  if (typeof num === "bigint") {
+  // Handle bigint or large number strings
+  if (typeof num === "bigint" || (typeof num === "string" && /^\d+$/.test(num))) {
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
   
   // Handle regular numbers
-  if (Number.isInteger(num)) {
+  if (typeof num === "number" && Number.isInteger(num)) {
     return num.toLocaleString("en-US");
   }
   
