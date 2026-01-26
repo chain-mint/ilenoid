@@ -541,3 +541,45 @@
     )
   )
 )
+
+;; =============================================================
+;;                  EMERGENCY CONTROLS
+;; =============================================================
+
+;; Emergency withdrawal of funds from a project (only when paused)
+;; @param project-id: The ID of the project to withdraw funds from
+;; @return: (ok amount-withdrawn) on success
+;; @dev Only owner can withdraw. Only works when contract is paused.
+;;      Withdraws all remaining balance from the project to the owner.
+;;      This is a last resort for stuck funds.
+(define-public (emergency-withdraw
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((project-balance (get balance project)))
+      (begin
+        ;; Check: Owner only
+        (asserts! (is-owner?) ERR_UNAUTHORIZED)
+        ;; Check: Contract is paused
+        (asserts! (var-get contract-paused) ERR_CONTRACT_PAUSED)
+        ;; Check: Project exists (already checked via unwrap!)
+        ;; Set project balance to 0
+        (map-set projects project-id (merge project {
+          balance: u0
+        }))
+        ;; Withdraw all remaining balance: STX or SIP-010 token
+        (let ((donation-token (get donation-token project)))
+          (match donation-token
+            ;; STX transfer: use stx-transfer? from contract to owner
+            none
+            (try! (as-contract (stx-transfer? project-balance current-contract CONTRACT_OWNER)))
+            ;; SIP-010 token transfer: call token contract's transfer function
+            (some token-contract)
+            (try! (as-contract (contract-call? token-contract transfer project-balance current-contract CONTRACT_OWNER none)))
+          )
+        )
+        (ok project-balance)
+      )
+    )
+  )
+)
