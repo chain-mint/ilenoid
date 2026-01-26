@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { type Address } from "viem";
 import { useProject, useCurrentMilestone } from "@/hooks/useProject";
 import { useMilestoneVoteStatus } from "@/hooks/useVoting";
@@ -27,7 +27,10 @@ export function ReleaseFundsButton({ projectId }: ReleaseFundsButtonProps) {
     projectId,
     project?.currentMilestone ?? BigInt(0)
   );
-  const { releaseFunds, isPending, isConfirming } = useReleaseFunds(projectId);
+  const { releaseFunds, isPending } = useReleaseFunds(
+    projectId,
+    project?.currentMilestone ?? BigInt(0)
+  );
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
   const isLoading = isLoadingProject || isLoadingMilestone || isLoadingVoteStatus;
@@ -71,11 +74,11 @@ export function ReleaseFundsButton({ projectId }: ReleaseFundsButtonProps) {
       <Button
         variant="primary"
         onClick={handleRelease}
-        isLoading={isPending || isConfirming}
-        disabled={isPending || isConfirming}
+        isLoading={isPending}
+        disabled={isPending}
         className="bg-emerald-green hover:bg-emerald-green-hover"
       >
-        {isPending ? "Confirming..." : isConfirming ? "Releasing Funds..." : "Release Funds"}
+        {isPending ? "Releasing Funds..." : "Release Funds"}
       </Button>
 
       <Modal
@@ -113,15 +116,15 @@ export function ReleaseFundsButton({ projectId }: ReleaseFundsButtonProps) {
             <Button
               variant="secondary"
               onClick={() => setShowConfirmModal(false)}
-              disabled={isPending || isConfirming}
+              disabled={isPending}
             >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleConfirm}
-              isLoading={isPending || isConfirming}
-              disabled={isPending || isConfirming}
+              isLoading={isPending}
+              disabled={isPending}
               className="bg-emerald-green hover:bg-emerald-green-hover"
             >
               Confirm Release
