@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useConnection, useBalance, useReadContracts } from "wagmi";
-import { type Address, isAddress, parseEther, parseUnits, formatEther, formatUnits } from "viem";
-import { erc20Abi } from "viem";
-import { useDonateETH, useDonateERC20 } from "@/hooks/useDonation";
+import { useConnection } from "@/hooks/useConnection";
+import { useDonateSTX } from "@/hooks/useDonation";
+import { getStxAddress } from "@/lib/stacks-connect";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { USDC_ADDRESS } from "@/lib/contract";
@@ -14,95 +14,43 @@ import toast from "react-hot-toast";
 
 export interface DonateFormProps {
   projectId: number | bigint;
-  donationToken: Address;
+  donationToken: string; // For Stacks, this is just a string identifier
   onSuccess?: () => void;
 }
 
 /**
- * DonateForm component for making donations
+ * DonateForm component for making STX donations
  */
 export function DonateForm({ projectId, donationToken, onSuccess }: DonateFormProps) {
   const { address, isConnected } = useConnection();
   const [amount, setAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  // Detect token type
-  const isETH = donationToken === "0x0000000000000000000000000000000000000000" || !isAddress(donationToken);
-  const isUSDC = donationToken.toLowerCase() === USDC_ADDRESS.toLowerCase();
-  const tokenName = isETH ? "ETH" : isUSDC ? "USDC" : "Token";
-  const tokenDecimals = isETH ? 18 : isUSDC ? 6 : 18;
+  // For Stacks, we use STX (native token)
+  const tokenName = "STX";
+  const tokenDecimals = 6; // STX uses 6 decimals (microSTX)
 
-  // Get wallet balance
-  const { data: ethBalance } = useBalance({
-    address,
-    query: {
-      enabled: isConnected && isETH,
+  // Get STX balance (simplified - in production you'd fetch from Stacks API)
+  const stxAddress = getStxAddress();
+  const { data: stxBalance } = useQuery({
+    queryKey: ["stxBalance", stxAddress],
+    queryFn: async () => {
+      // In production, fetch from Stacks API
+      // For now, return 0 as placeholder
+      return BigInt(0);
     },
+    enabled: !!stxAddress && isConnected,
   });
 
-  // Get ERC20 token balance using useReadContracts (token parameter deprecated in wagmi v3)
-  const { data: tokenData } = useReadContracts({
-    contracts: !isETH && isConnected && address
-      ? [
-          {
-            address: donationToken,
-            abi: erc20Abi,
-            functionName: "balanceOf",
-            args: [address],
-          },
-          {
-            address: donationToken,
-            abi: erc20Abi,
-            functionName: "decimals",
-          },
-        ]
-      : [],
-    query: {
-      enabled: isConnected && !isETH && !!address,
-    },
-  });
+  const formattedBalance = stxBalance ? (Number(stxBalance) / 1_000_000).toFixed(6) : "0";
 
-  // Extract token balance and decimals from contract calls
-  const tokenBalanceValue = tokenData?.[0]?.result as bigint | undefined;
-  const tokenDecimalsFromContract = (tokenData?.[1]?.result as number | undefined) ?? tokenDecimals;
-
-  // Create balance object similar to useBalance return type
-  const tokenBalance = tokenBalanceValue
-    ? {
-        value: tokenBalanceValue,
-        decimals: tokenDecimalsFromContract,
-        symbol: tokenName,
-      }
-    : undefined;
-
-  const balance = isETH ? ethBalance : tokenBalance;
-  const formattedBalance = balance
-    ? isETH
-      ? formatEther(balance.value)
-      : formatUnits(balance.value, balance.decimals)
-    : "0";
-
-  // Donation hooks
+  // Donation hook for STX
   const {
-    donate: donateETH,
-    isPending: isPendingETH,
-    isConfirming: isConfirmingETH,
-    isSuccess: isSuccessETH,
-    error: errorETH,
-  } = useDonateETH(projectId);
-
-  const {
-    donate: donateERC20,
-    isPending: isPendingERC20,
-    isConfirming: isConfirmingERC20,
-    isSuccess: isSuccessERC20,
-    allowance,
-    error: errorERC20,
-  } = useDonateERC20(projectId, donationToken);
-
-  const isPending = isPendingETH || isPendingERC20 || isConfirmingETH || isConfirmingERC20;
-  const donationError = errorETH || errorERC20;
-  const isSuccess = isSuccessETH || isSuccessERC20;
+    donate: donateSTX,
+    isPending,
+    isSuccess,
+    error: donationError,
+  } = useDonateSTX(projectId);
 
   // Display error from hook if present
   useEffect(() => {
@@ -133,8 +81,8 @@ export function DonateForm({ projectId, donationToken, onSuccess }: DonateFormPr
       return "Amount must be greater than 0";
     }
 
-    // Check if amount exceeds balance
-    if (balance) {
+    // Check if amount exceeds balance (if balance is available)
+    if (stxBalance) {
       const numValue = parseFloat(value);
       const balanceNum = parseFloat(formattedBalance);
       if (numValue > balanceNum) {
@@ -168,11 +116,8 @@ export function DonateForm({ projectId, donationToken, onSuccess }: DonateFormPr
     }
 
     try {
-      if (isETH) {
-        await donateETH(amount);
-      } else {
-        await donateERC20(amount, tokenDecimals);
-      }
+      // For Stacks, always use STX donation
+      await donateSTX(amount);
       // Clear form on success (handled by hook's success effect)
       setAmount("");
     } catch (err) {
@@ -244,19 +189,8 @@ export function DonateForm({ projectId, donationToken, onSuccess }: DonateFormPr
             isLoading={isPending}
             disabled={isPending || !!error || !amount || parseFloat(amount) <= 0}
           >
-            {isPending
-              ? isConfirmingETH || isConfirmingERC20
-                ? "Confirming..."
-                : "Processing..."
-              : `Donate ${tokenName}`}
+            {isPending ? "Processing..." : `Donate ${tokenName}`}
           </Button>
-
-          {/* Approval info for ERC20 */}
-          {!isETH && allowance > BigInt(0) && (
-            <p className="text-xs text-slate-grey opacity-70 text-center">
-              Token approved. You can donate up to {formatUnits(allowance, tokenDecimals)} {tokenName}
-            </p>
-          )}
         </form>
       </CardBody>
     </Card>
