@@ -583,3 +583,135 @@
     )
   )
 )
+
+;; =============================================================
+;;                  READ-ONLY FUNCTIONS
+;; =============================================================
+
+;; =============================================================
+;;                  PROJECT QUERIES
+;; =============================================================
+
+;; Get project information
+;; @param project-id: The ID of the project
+;; @return: The Project struct containing all project data, or none if not found
+(define-read-only (get-project (project-id uint))
+  (map-get? projects project-id)
+)
+
+;; Get the total number of milestones for a project
+;; @param project-id: The ID of the project
+;; @return: The number of milestones, or none if project not found
+(define-read-only (get-project-milestone-count (project-id uint))
+  (map-get? project-milestone-count project-id)
+)
+
+;; Get the project counter (total number of projects created)
+;; @return: The current project counter value
+(define-read-only (get-project-counter)
+  (var-get project-counter)
+)
+
+;; =============================================================
+;;                  MILESTONE QUERIES
+;; =============================================================
+
+;; Get milestone information
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @return: The Milestone struct containing all milestone data, or none if not found
+(define-read-only (get-milestone (project-id uint) (milestone-id uint))
+  (map-get? milestones {project-id: project-id, milestone-id: milestone-id})
+)
+
+;; Get the current milestone for a project
+;; @param project-id: The ID of the project
+;; @return: The current Milestone struct, or none if project/milestone not found
+(define-read-only (get-current-milestone (project-id uint))
+  (let ((project (map-get? projects project-id)))
+    (match project
+      (some proj)
+      (let ((current-milestone-id (get current-milestone proj)))
+        (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id})
+      )
+      none
+      none
+    )
+  )
+)
+
+;; =============================================================
+;;                  DONATION QUERIES
+;; =============================================================
+
+;; Get a donor's total contribution to a project
+;; @param project-id: The ID of the project
+;; @param donor: The principal address of the donor
+;; @return: The total amount contributed by the donor (0 if no contribution)
+(define-read-only (get-donor-contribution (project-id uint) (donor principal))
+  (default-to u0 (map-get? donor-contributions {project-id: project-id, donor: donor}))
+)
+
+;; Get the total donations received for a project
+;; @param project-id: The ID of the project
+;; @return: The total donations amount (0 if project not found)
+(define-read-only (get-total-project-donations (project-id uint))
+  (default-to u0 (map-get? total-project-donations project-id))
+)
+
+;; Check if a donor has voted on a specific milestone
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @param donor: The principal address of the donor
+;; @return: True if the donor has voted, false otherwise
+(define-read-only (has-donor-voted (project-id uint) (milestone-id uint) (donor principal))
+  (default-to false (map-get? has-voted {project-id: project-id, milestone-id: milestone-id, donor: donor}))
+)
+
+;; =============================================================
+;;                  VOTING STATUS
+;; =============================================================
+
+;; Get voting status for a milestone
+;; @param project-id: The ID of the project
+;; @param milestone-id: The ID of the milestone
+;; @return: A tuple containing:
+;;   - vote-weight: The total vote weight for this milestone
+;;   - snapshot: The donation snapshot at vote start
+;;   - can-release: True if quorum is met and balance is sufficient for release
+;;   Returns none if milestone not found
+(define-read-only (get-milestone-vote-status (project-id uint) (milestone-id uint))
+  (let ((milestone (map-get? milestones {project-id: project-id, milestone-id: milestone-id})))
+    (match milestone
+      (some ms)
+      (let ((vote-weight (get vote-weight ms))
+            (amount-requested (get amount-requested ms))
+            (snapshot (default-to u0 (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: milestone-id}))))
+        (let ((project (map-get? projects project-id)))
+          (match project
+            (some proj)
+            (let ((balance (get balance proj)))
+              ;; can-release = (voteWeight > 50% of snapshot) && (balance >= amountRequested)
+              (let ((quorum-met (and (> snapshot u0) (> (* vote-weight u100) (* snapshot u50))))
+                    (sufficient-balance (>= balance amount-requested)))
+                (ok {
+                  vote-weight: vote-weight,
+                  snapshot: snapshot,
+                  can-release: (and quorum-met sufficient-balance)
+                })
+              )
+            )
+            none
+            (ok {
+              vote-weight: vote-weight,
+              snapshot: snapshot,
+              can-release: false
+            })
+          )
+        )
+      )
+      none
+      none
+    )
+  )
+)
