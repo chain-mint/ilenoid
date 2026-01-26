@@ -400,3 +400,62 @@
     )
   )
 )
+
+;; =============================================================
+;;                    MILESTONE VOTING
+;; =============================================================
+
+;; Vote on the current milestone for a project
+;; @param project-id: The ID of the project to vote on
+;; @return: (ok vote-weight) on success
+;; @dev Only donors with contributions can vote. Vote weight equals total contribution.
+;;      One vote per milestone per donor. Snapshot is taken on first vote to prevent
+;;      donations after voting starts from affecting the quorum calculation.
+(define-public (vote-on-milestone
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((current-milestone-id (get current-milestone project)))
+      (let ((milestone-count (unwrap! (map-get? project-milestone-count project-id) ERR_NO_CURRENT_MILESTONE)))
+        (let ((milestone (unwrap! (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id}) ERR_NO_CURRENT_MILESTONE)))
+          (let ((donor-contribution (default-to u0 (map-get? donor-contributions {project-id: project-id, donor: tx-sender}))))
+            (begin
+              ;; Check: Project exists (already checked via unwrap!)
+              ;; Check: Current milestone exists (current-milestone-id < milestone-count)
+              (asserts! (< current-milestone-id milestone-count) ERR_NO_CURRENT_MILESTONE)
+              ;; Check: Milestone not approved
+              (asserts! (not (get approved milestone)) ERR_MILESTONE_ALREADY_APPROVED)
+              ;; Check: Donor has contribution > 0
+              (asserts! (> donor-contribution u0) ERR_NO_CONTRIBUTION)
+              ;; Check: Donor hasn't voted on this milestone
+              (asserts! (not (default-to false (map-get? has-voted {project-id: project-id, milestone-id: current-milestone-id, donor: tx-sender}))) ERR_ALREADY_VOTED)
+              ;; Check: Contract is not paused
+              (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+              ;; Snapshot Logic: Capture total donations at vote start (first vote only)
+              ;; If snapshot doesn't exist (is none), this is the first vote
+              (let ((existing-snapshot (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id})))
+                (if (is-none existing-snapshot)
+                  (let ((total-donations (default-to u0 (map-get? total-project-donations project-id))))
+                    (map-set milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id} total-donations)
+                  )
+                )
+              )
+              ;; Calculate vote weight from donor contributions
+              (let ((vote-weight donor-contribution))
+                ;; Update milestone's vote-weight
+                (let ((current-vote-weight (get vote-weight milestone)))
+                  (map-set milestones {project-id: project-id, milestone-id: current-milestone-id} (merge milestone {
+                    vote-weight: (+ current-vote-weight vote-weight)
+                  }))
+                )
+                ;; Set has-voted map entry
+                (map-set has-voted {project-id: project-id, milestone-id: current-milestone-id, donor: tx-sender} true)
+                (ok vote-weight)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
