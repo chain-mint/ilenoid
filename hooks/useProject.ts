@@ -4,6 +4,7 @@ import { ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
 import { callReadOnlyFunction, transformProjectData, transformMilestoneData } from "@/lib/stacks-contract";
 import { getStxAddress } from "@/lib/stacks-connect";
 import { type Project, type Milestone } from "@/types/contract";
+import { toBigInt } from "@/lib/utils";
 
 /**
  * Hook to fetch a single project by ID
@@ -39,8 +40,20 @@ export function useProject(projectId: number | bigint): {
     enabled: projectId > 0 && !!senderAddress,
   });
 
+  // Convert serialized BigInt strings back to BigInt
+  const project = data
+    ? {
+        ...data,
+        id: toBigInt(data.id),
+        goal: toBigInt(data.goal),
+        totalDonated: toBigInt(data.totalDonated),
+        balance: toBigInt(data.balance),
+        currentMilestone: toBigInt(data.currentMilestone),
+      }
+    : undefined;
+
   return {
-    project: data || undefined,
+    project,
     isLoading,
     isError,
     error: error as Error | null,
@@ -96,13 +109,23 @@ export function useAllProjects(): {
         })
       );
 
-      return projects.filter((p): p is Project => p !== null && p.id > BigInt(0));
+      return projects.filter((p): p is any => p !== null && toBigInt(p.id) > BigInt(0));
     },
     enabled: !!projectCounter && projectCounter > 0 && !!senderAddress,
   });
 
+  // Convert serialized BigInt strings back to BigInt
+  const projects = (data || []).map((p: any) => ({
+    ...p,
+    id: toBigInt(p.id),
+    goal: toBigInt(p.goal),
+    totalDonated: toBigInt(p.totalDonated),
+    balance: toBigInt(p.balance),
+    currentMilestone: toBigInt(p.currentMilestone),
+  }));
+
   return {
-    projects: data || [],
+    projects,
     isLoading: isLoading || isLoadingCounter,
     isError,
     error: error as Error | null,

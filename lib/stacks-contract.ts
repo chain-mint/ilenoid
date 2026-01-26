@@ -2,6 +2,7 @@ import { fetchCallReadOnlyFunction, makeContractCall, Cl, cvToJSON, cvToValue } 
 import { stacksNetwork, ILENOID_CONTRACT_ADDRESS, isMainnet } from "./stacks";
 import { ILENOID_CONTRACT_NAME, ILENOID_CONTRACT_INTERFACE } from "./contract";
 import { requestStacksMethod } from "./stacks-connect";
+import { serializeBigInt } from "./utils";
 
 /**
  * Utility functions for interacting with Ilenoid Clarity contract
@@ -102,38 +103,48 @@ export async function callContractFunctionWithSTX(
 
 /**
  * Transform Clarity project data to Project type
+ * BigInt values are serialized to strings for React Query compatibility
  */
 export function transformProjectData(data: any, projectId?: number): any {
   if (!data || typeof data !== "object") {
     return null;
   }
 
-  return {
+  const project = {
     id: BigInt(projectId || 0),
     ngo: data.ngo?.value || data.ngo,
     goal: BigInt(data.goal?.value || data.goal || 0),
     totalDonated: BigInt(data["total-donated"]?.value || data.totalDonated || 0),
     balance: BigInt(data.balance?.value || data.balance || 0),
+    currentMilestone: BigInt(data["current-milestone"]?.value || data.currentMilestone || 0),
     milestoneCount: Number(data["milestone-count"]?.value || data.milestoneCount || 0),
+    isActive: data["is-active"]?.value ?? data.isActive ?? true,
     isCompleted: data["is-completed"]?.value || data.isCompleted || false,
   };
+
+  // Serialize BigInt values to strings for React Query
+  return serializeBigInt(project);
 }
 
 /**
  * Transform Clarity milestone data to Milestone type
+ * BigInt values are serialized to strings for React Query compatibility
  */
 export function transformMilestoneData(data: any): any {
   if (!data || typeof data !== "object") {
     return null;
   }
 
-  return {
-    amount: BigInt(data.amount?.value || data.amount || 0),
-    isReleased: data["is-released"]?.value || data.isReleased || false,
-    yesVotes: BigInt(data["yes-votes"]?.value || data.yesVotes || 0),
-    noVotes: BigInt(data["no-votes"]?.value || data.noVotes || 0),
-    snapshotDonations: BigInt(data["snapshot-donations"]?.value || data.snapshotDonations || 0),
+  const milestone = {
+    description: data.description?.value || data.description || "",
+    amountRequested: BigInt(data["amount-requested"]?.value || data.amountRequested || data.amount?.value || data.amount || 0),
+    approved: data.approved?.value ?? data.approved ?? false,
+    fundsReleased: data["funds-released"]?.value ?? data.fundsReleased ?? data["is-released"]?.value ?? data.isReleased ?? false,
+    voteWeight: BigInt(data["vote-weight"]?.value || data.voteWeight || 0),
   };
+
+  // Serialize BigInt values to strings for React Query
+  return serializeBigInt(milestone);
 }
 
 /**
