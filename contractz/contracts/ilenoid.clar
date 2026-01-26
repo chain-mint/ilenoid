@@ -459,3 +459,85 @@
     )
   )
 )
+
+;; =============================================================
+;;                      FUND RELEASE
+;; =============================================================
+
+;; Release funds for the current milestone
+;; @param project-id: The ID of the project to release funds for
+;; @return: (ok amount-released) on success
+;; @dev Only the project's NGO can release funds. Requires >50% quorum from donors.
+;;      Transfers funds (STX or SIP-010 token) to NGO.
+;;      Marks project as completed if this is the final milestone.
+(define-public (release-funds
+  (project-id uint)
+)
+  (let ((project (unwrap! (map-get? projects project-id) ERR_PROJECT_NOT_FOUND)))
+    (let ((current-milestone-id (get current-milestone project)))
+      (let ((milestone-count (unwrap! (map-get? project-milestone-count project-id) ERR_NO_CURRENT_MILESTONE)))
+        (let ((milestone (unwrap! (map-get? milestones {project-id: project-id, milestone-id: current-milestone-id}) ERR_NO_CURRENT_MILESTONE)))
+          (let ((amount-requested (get amount-requested milestone)))
+            (begin
+              ;; Check: Project exists (already checked via unwrap!)
+              ;; Check: Caller is project's NGO
+              (asserts! (is-eq tx-sender (get ngo project)) ERR_NOT_PROJECT_NGO)
+              ;; Check: Current milestone exists (current-milestone-id < milestone-count)
+              (asserts! (< current-milestone-id milestone-count) ERR_NO_CURRENT_MILESTONE)
+              ;; Check: Milestone not approved
+              (asserts! (not (get approved milestone)) ERR_MILESTONE_ALREADY_APPROVED)
+              ;; Check: Milestone funds not released
+              (asserts! (not (get funds-released milestone)) ERR_MILESTONE_ALREADY_RELEASED)
+              ;; Check: Snapshot exists (voting has started)
+              (let ((snapshot (unwrap! (map-get? milestone-snapshot-donations {project-id: project-id, milestone-id: current-milestone-id}) ERR_QUORUM_NOT_MET)))
+                ;; Check: Quorum is met (>50% of snapshot)
+                ;; vote-weight must be > (snapshot * 50) / 100
+                ;; This is equivalent to: vote-weight * 100 > snapshot * 50
+                (let ((vote-weight (get vote-weight milestone)))
+                  (asserts! (> (* vote-weight u100) (* snapshot u50)) ERR_QUORUM_NOT_MET)
+                  ;; Check: Project balance >= milestone amount
+                  (asserts! (>= (get balance project) amount-requested) ERR_INSUFFICIENT_PROJECT_BALANCE)
+                  ;; Check: Contract is not paused
+                  (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+                  ;; Mark milestone as approved and released
+                  (map-set milestones {project-id: project-id, milestone-id: current-milestone-id} (merge milestone {
+                    approved: true,
+                    funds-released: true
+                  }))
+                  ;; Decrement project balance
+                  (let ((new-balance (- (get balance project) amount-requested)))
+                    ;; Increment current-milestone
+                    (let ((new-current-milestone (+ current-milestone-id u1)))
+                      ;; Check if this is the final milestone
+                      (let ((is-final-milestone (is-eq new-current-milestone milestone-count)))
+                        ;; Update project: balance, current-milestone, and completion status
+                        (map-set projects project-id (merge project {
+                          balance: new-balance,
+                          current-milestone: new-current-milestone,
+                          is-completed: is-final-milestone,
+                          is-active: (not is-final-milestone)
+                        }))
+                        ;; Transfer funds: STX or SIP-010 token
+                        (let ((donation-token (get donation-token project)))
+                          (match donation-token
+                            ;; STX transfer: use stx-transfer? from contract
+                            none
+                            (try! (as-contract (stx-transfer? amount-requested current-contract (get ngo project))))
+                            ;; SIP-010 token transfer: call token contract's transfer function
+                            (some token-contract)
+                            (try! (as-contract (contract-call? token-contract transfer amount-requested current-contract (get ngo project) none)))
+                          )
+                        )
+                        (ok amount-requested)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
