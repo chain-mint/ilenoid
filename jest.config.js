@@ -18,7 +18,6 @@ const customJestConfig = {
   ],
   testPathIgnorePatterns: [
     "/node_modules/",
-    "/contract/",
     "/.next/",
   ],
   collectCoverageFrom: [

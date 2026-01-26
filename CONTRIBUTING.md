@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Ilenoid! This document provides g
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/yourusername/ilenoid/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/udofia2/ilenoid/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -63,15 +63,23 @@ See the [README.md](README.md) for setup instructions.
 npm test
 
 # Smart contract tests
-cd contract
-forge test
+cd contractz
+npm test
+# or
+clarinet test
+
+# Check contract compilation
+clarinet check
+
+# Format contracts
+clarinet fmt
 ```
 
 ### Code Style
 
 - **TypeScript/React**: Follow existing patterns
-- **Solidity**: Follow [Style Guide](https://docs.soliditylang.org/en/latest/style-guide.html)
-- **Formatting**: Use Prettier (frontend) and `forge fmt` (contracts)
+- **Clarity**: Follow [Clarity Style Guide](https://docs.stacks.co/docs/clarity/language-design)
+- **Formatting**: Use Prettier (frontend) and `clarinet fmt` (contracts)
 
 ## 🎯 Areas for Contribution
 
@@ -89,9 +97,11 @@ forge test
 
 ### Nice to Have
 - Translations
-- Additional wallet integrations
+- Additional SIP-010 token support
 - Analytics improvements
 - Mobile optimizations
+- Clarity contract optimizations
+- Test coverage improvements
 
 ## 📝 Code Review Process
 
@@ -120,8 +130,8 @@ If applicable, add screenshots.
 
 **Environment:**
 - Browser: [e.g. Chrome 120]
-- Wallet: [e.g. MetaMask 10.25.0]
-- Network: [e.g. Base Sepolia]
+- Wallet: [e.g. Hiro Wallet, Xverse]
+- Network: [e.g. Stacks Testnet, Stacks Mainnet]
 - OS: [e.g. macOS 14.0]
 
 **Additional context**

@@ -36,7 +36,7 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.bool(true));
 
       const verified = isVerifiedNGO(accounts.wallet1);
-      expect(verified.result).toBeOk(Cl.bool(true));
+      expect(verified.result).toBeBool(true);
     });
 
     it("should not allow non-owner to register an NGO", () => {
@@ -53,7 +53,7 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.bool(true));
 
       const verified = isVerifiedNGO(accounts.wallet1);
-      expect(verified.result).toBeOk(Cl.bool(false));
+      expect(verified.result).toBeBool(false);
     });
 
     it("should not allow non-owner to revoke NGO", () => {
@@ -81,13 +81,15 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.uint(1));
 
       const project = getProject(1);
-      expect(project.result.type).toBe(1); // some
-      if (project.result.type === 1) {
-        expect(project.result.value.id).toBeUint(1);
-        expect(project.result.value.ngo).toBePrincipal(accounts.wallet1);
-        expect(project.result.value.goal).toBeUint(1000000);
-        expect(project.result.value.isActive).toBeBool(true);
-        expect(project.result.value.isCompleted).toBeBool(false);
+      expect(project.result.type).toBe("some"); // some
+      if (project.result.type === "some") {
+        const val = project.result.value as any;
+        const projectData = val.data || val;
+        expect((projectData.id ?? projectData["id"])).toBeUint(1);
+        expect((projectData.ngo ?? projectData["ngo"])).toBePrincipal(accounts.wallet1);
+        expect((projectData.goal ?? projectData["goal"])).toBeUint(1000000);
+        expect((projectData["is-active"] ?? projectData.isActive)).toBeBool(true);
+        expect((projectData["is-completed"] ?? projectData.isCompleted)).toBeBool(false);
       }
     });
 
@@ -161,9 +163,10 @@ describe("Ilenoid Contract Tests", () => {
       expect(contribution.result).toBeUint(100000);
 
       const project = getProject(projectId);
-      if (project.result.type === 1) {
-        expect(project.result.value.totalDonated).toBeUint(100000);
-        expect(project.result.value.balance).toBeUint(100000);
+      if (project.result.type === "some") {
+        const projectData = project.result.value.data || project.result.value;
+        expect(projectData["total-donated"]).toBeUint(100000);
+        expect(projectData.balance).toBeUint(100000);
       }
     });
 
@@ -219,8 +222,9 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.uint(100000)); // Vote weight = contribution
 
       const milestone = getMilestone(projectId, 0);
-      if (milestone.result.type === 1) {
-        expect(milestone.result.value.voteWeight).toBeUint(100000);
+      if (milestone.result.type === "some") {
+        const milestoneData = milestone.result.value.data || milestone.result.value;
+        expect(milestoneData["vote-weight"]).toBeUint(100000);
       }
     });
 
@@ -242,7 +246,7 @@ describe("Ilenoid Contract Tests", () => {
       voteOnMilestone(projectId, accounts.wallet2);
       
       const statusAfter = getMilestoneVoteStatus(projectId, 0);
-      if (statusAfter.result.type === 1 && statusAfter.result.value.type === 1) {
+      if (statusAfter.result.type === "some" && statusAfter.result.value.type === "ok") {
         const voteStatus = statusAfter.result.value.value;
         expect(voteStatus.snapshot).toBeUint(300000); // Total donations at vote start
       }
@@ -253,8 +257,9 @@ describe("Ilenoid Contract Tests", () => {
       voteOnMilestone(projectId, accounts.wallet3); // 200000
 
       const milestone = getMilestone(projectId, 0);
-      if (milestone.result.type === 1) {
-        expect(milestone.result.value.voteWeight).toBeUint(300000);
+      if (milestone.result.type === "some") {
+        const milestoneData = milestone.result.value.data || milestone.result.value;
+        expect(milestoneData["vote-weight"]).toBeUint(300000);
       }
     });
   });
@@ -285,15 +290,17 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.uint(500000));
 
       const milestone = getMilestone(projectId, 0);
-      if (milestone.result.type === 1) {
-        expect(milestone.result.value.approved).toBeBool(true);
-        expect(milestone.result.value.fundsReleased).toBeBool(true);
+      if (milestone.result.type === "some") {
+        const milestoneData = milestone.result.value.data || milestone.result.value;
+        expect(milestoneData.approved).toBeBool(true);
+        expect(milestoneData["funds-released"]).toBeBool(true);
       }
 
       const project = getProject(projectId);
-      if (project.result.type === 1) {
-        expect(project.result.value.balance).toBeUint(100000); // 600000 - 500000
-        expect(project.result.value.currentMilestone).toBeUint(1);
+      if (project.result.type === "some") {
+        const projectData = project.result.value.data || project.result.value;
+        expect(projectData.balance).toBeUint(100000); // 600000 - 500000
+        expect(projectData["current-milestone"]).toBeUint(1);
       }
     });
 
@@ -334,9 +341,10 @@ describe("Ilenoid Contract Tests", () => {
       expect(result.result).toBeOk(Cl.uint(500000));
 
       const project = getProject(projectId);
-      if (project.result.type === 1) {
-        expect(project.result.value.isCompleted).toBeBool(true);
-        expect(project.result.value.isActive).toBeBool(false);
+      if (project.result.type === "some") {
+        const projectData = project.result.value.data || project.result.value;
+        expect(projectData["is-completed"] || projectData.isCompleted).toBeBool(true);
+        expect(projectData["is-active"] || projectData.isActive).toBeBool(false);
       }
     });
   });
@@ -426,17 +434,19 @@ describe("Ilenoid Contract Tests", () => {
     it("should return project information", () => {
       const project = getProject(projectId);
       expect(project.result.type).toBe(1); // some
-      if (project.result.type === 1) {
-        expect(project.result.value.id).toBeUint(1);
-        expect(project.result.value.ngo).toBePrincipal(accounts.wallet1);
+      if (project.result.type === "some") {
+        const projectData = project.result.value.data || project.result.value;
+        expect(projectData.id).toBeUint(1);
+        expect(projectData.ngo).toBePrincipal(accounts.wallet1);
       }
     });
 
     it("should return milestone information", () => {
       const milestone = getMilestone(projectId, 0);
-      expect(milestone.result.type).toBe(1); // some
-      if (milestone.result.type === 1) {
-        expect(milestone.result.value.amountRequested).toBeUint(500000);
+      expect(milestone.result.type).toBe("some"); // some
+      if (milestone.result.type === "some") {
+        const milestoneData = (milestone.result.value as any).data || milestone.result.value;
+        expect(milestoneData["amount-requested"] || (milestoneData as any)["amount-requested"]).toBeUint(500000);
       }
     });
 
@@ -452,11 +462,11 @@ describe("Ilenoid Contract Tests", () => {
       voteOnMilestone(projectId, accounts.wallet2);
 
       const status = getMilestoneVoteStatus(projectId, 0);
-      expect(status.result.type).toBe(1); // some
-      if (status.result.type === 1 && status.result.value.type === 1) {
+      expect(status.result.type).toBe("some"); // some
+      if (status.result.type === "some" && status.result.value.type === "ok") {
         const voteStatus = status.result.value.value;
-        expect(voteStatus.voteWeight).toBeUint(400000);
-        expect(voteStatus.canRelease).toBeBool(true);
+        expect(voteStatus["vote-weight"]).toBeUint(400000);
+        expect(voteStatus["can-release"]).toBeBool(true);
       }
     });
   });
@@ -465,7 +475,7 @@ describe("Ilenoid Contract Tests", () => {
     it("should complete full project lifecycle", () => {
       // 1. Register NGO
       registerNGO(accounts.wallet1, "deployer");
-      expect(isVerifiedNGO(accounts.wallet1).result).toBeOk(Cl.bool(true));
+      expect(isVerifiedNGO(accounts.wallet1).result).toBeBool(true);
 
       // 2. Create project
       const createResult = createProject(
@@ -484,9 +494,10 @@ describe("Ilenoid Contract Tests", () => {
       donateSTX(projectId, 100000, accounts.wallet4);
 
       const project = getProject(projectId);
-      if (project.result.type === 1) {
-        expect(project.result.value.totalDonated).toBeUint(600000);
-        expect(project.result.value.balance).toBeUint(600000);
+      if (project.result.type === "some") {
+        const projectData = project.result.value.data || project.result.value;
+        expect(projectData["total-donated"]).toBeUint(600000);
+        expect(projectData.balance).toBeUint(600000);
       }
 
       // 4. Voting
@@ -495,8 +506,9 @@ describe("Ilenoid Contract Tests", () => {
       voteOnMilestone(projectId, accounts.wallet4);
 
       const milestone = getMilestone(projectId, 0);
-      if (milestone.result.type === 1) {
-        expect(milestone.result.value.voteWeight).toBeUint(600000);
+      if (milestone.result.type === "some") {
+        const milestoneData = milestone.result.value.data || milestone.result.value;
+        expect(milestoneData["vote-weight"]).toBeUint(600000);
       }
 
       // 5. Release funds
@@ -505,9 +517,10 @@ describe("Ilenoid Contract Tests", () => {
 
       // 6. Verify milestone advanced
       const projectAfter = getProject(projectId);
-      if (projectAfter.result.type === 1) {
-        expect(projectAfter.result.value.currentMilestone).toBeUint(1);
-        expect(projectAfter.result.value.balance).toBeUint(100000);
+      if (projectAfter.result.type === "some") {
+        const projectData = projectAfter.result.value.data || projectAfter.result.value;
+        expect(projectData["current-milestone"]).toBeUint(1);
+        expect(projectData.balance).toBeUint(100000);
       }
     });
   });

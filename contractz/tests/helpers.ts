@@ -53,6 +53,11 @@ export function revokeNGO(ngo: string, caller: string = "deployer") {
 
 /**
  * Create a test project
+ * @param ngo - The NGO address (used as tx-sender, must be verified)
+ * @param goal - The fundraising goal
+ * @param descriptions - List of milestone descriptions
+ * @param amounts - List of milestone amounts
+ * @param donationToken - Optional token contract address (null for STX projects)
  */
 export function createProject(
   ngo: string,
@@ -68,13 +73,12 @@ export function createProject(
     CONTRACT_NAME,
     "create-project",
     [
-      Cl.principal(typeof ngoAccount === "string" ? ngoAccount : ngo),
-      Cl.uint(goal),
-      Cl.list(descriptions.map(d => Cl.stringUtf8(d))),
-      Cl.list(amounts.map(a => Cl.uint(a))),
-      donationToken ? Cl.some(Cl.principal(donationToken)) : Cl.none(),
+      donationToken ? Cl.some(Cl.principal(donationToken)) : Cl.none(), // donation-token (first param)
+      Cl.uint(goal), // goal
+      Cl.list(descriptions.map(d => Cl.stringUtf8(d))), // descriptions
+      Cl.list(amounts.map(a => Cl.uint(a))), // amounts
     ],
-    typeof ngoAccount === "string" ? ngoAccount : ngo
+    typeof ngoAccount === "string" ? ngoAccount : ngo // NGO is tx-sender, not a parameter
   );
 }
 
@@ -130,15 +134,22 @@ export function voteOnMilestone(projectId: number, voter: string) {
 
 /**
  * Release funds for a milestone
+ * @param projectId - The project ID
+ * @param ngo - The NGO address
+ * @param tokenTrait - SIP-010 trait reference (optional, uses contract's own trait for STX projects)
  */
-export function releaseFunds(projectId: number, ngo: string) {
+export function releaseFunds(projectId: number, ngo: string, tokenTrait?: { address: string; contract: string }) {
   const accounts = getAccounts();
   const ngoAccount = accounts[ngo as keyof typeof accounts] || ngo;
+  
+  // Use contract's own trait as default (works for STX projects since they use the 'none' branch)
+  // For token projects, pass the actual token contract trait
+  const trait = tokenTrait || { address: accounts.deployer, contract: CONTRACT_NAME };
   
   return simnet.callPublicFn(
     CONTRACT_NAME,
     "release-funds",
-    [Cl.uint(projectId)],
+    [Cl.uint(projectId), Cl.contractPrincipal(trait.address, trait.contract)],
     typeof ngoAccount === "string" ? ngoAccount : ngo
   );
 }
@@ -175,15 +186,22 @@ export function unpauseContract(caller: string = "deployer") {
 
 /**
  * Emergency withdraw from a project
+ * @param projectId - The project ID
+ * @param caller - The caller address (default: deployer)
+ * @param tokenTrait - SIP-010 trait reference (optional, uses contract's own trait for STX projects)
  */
-export function emergencyWithdraw(projectId: number, caller: string = "deployer") {
+export function emergencyWithdraw(projectId: number, caller: string = "deployer", tokenTrait?: { address: string; contract: string }) {
   const accounts = getAccounts();
   const callerAccount = caller === "deployer" ? accounts.deployer : accounts[caller as keyof typeof accounts];
+  
+  // Use contract's own trait as default (works for STX projects since they use the 'none' branch)
+  // For token projects, pass the actual token contract trait
+  const trait = tokenTrait || { address: accounts.deployer, contract: CONTRACT_NAME };
   
   return simnet.callPublicFn(
     CONTRACT_NAME,
     "emergency-withdraw",
-    [Cl.uint(projectId)],
+    [Cl.uint(projectId), Cl.contractPrincipal(trait.address, trait.contract)],
     callerAccount
   );
 }
