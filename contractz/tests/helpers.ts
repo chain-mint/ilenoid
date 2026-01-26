@@ -53,6 +53,11 @@ export function revokeNGO(ngo: string, caller: string = "deployer") {
 
 /**
  * Create a test project
+ * @param ngo - The NGO address (used as tx-sender, must be verified)
+ * @param goal - The fundraising goal
+ * @param descriptions - List of milestone descriptions
+ * @param amounts - List of milestone amounts
+ * @param donationToken - Optional token contract address (null for STX projects)
  */
 export function createProject(
   ngo: string,
@@ -68,13 +73,12 @@ export function createProject(
     CONTRACT_NAME,
     "create-project",
     [
-      Cl.principal(typeof ngoAccount === "string" ? ngoAccount : ngo),
-      Cl.uint(goal),
-      Cl.list(descriptions.map(d => Cl.stringUtf8(d))),
-      Cl.list(amounts.map(a => Cl.uint(a))),
-      donationToken ? Cl.some(Cl.principal(donationToken)) : Cl.none(),
+      donationToken ? Cl.some(Cl.principal(donationToken)) : Cl.none(), // donation-token (first param)
+      Cl.uint(goal), // goal
+      Cl.list(descriptions.map(d => Cl.stringUtf8(d))), // descriptions
+      Cl.list(amounts.map(a => Cl.uint(a))), // amounts
     ],
-    typeof ngoAccount === "string" ? ngoAccount : ngo
+    typeof ngoAccount === "string" ? ngoAccount : ngo // NGO is tx-sender, not a parameter
   );
 }
 
