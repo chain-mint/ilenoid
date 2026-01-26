@@ -57,9 +57,12 @@ export function WalletConnect() {
           toast.error("Failed to get wallet address");
         }
       } else {
-        toast.error("Failed to connect wallet. Please try again.");
+        // userData is null - this could be a user rejection or an error
+        // Don't show error toast as user rejection is handled silently
+        // Only show error if it's an actual connection failure (caught in catch block)
       }
     } catch (error: any) {
+      // Only actual errors reach here (not user rejections)
       console.error("Connection error:", error);
       toast.error(error.message || "Failed to connect wallet");
     } finally {
