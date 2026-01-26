@@ -210,3 +210,95 @@
 (define-read-only (is-verified-ngo (ngo principal))
   (default-to false (map-get? verified-ngos ngo))
 )
+
+;; =============================================================
+;;                      PROJECT CREATION
+;; =============================================================
+
+;; Private helper to validate, sum, and create milestones
+;; Returns (ok total-amount) if valid, (err code) if invalid
+(define-private (process-milestones-inline
+  (project-id uint)
+  (descriptions (list 50 (string-utf8 500)))
+  (amounts (list 50 uint))
+  (index uint)
+  (total uint)
+)
+  (if (>= index (len descriptions))
+    (ok total)
+    (let ((description (unwrap! (element-at descriptions index) ERR_INVALID_MILESTONE_ARRAYS))
+          (amount (unwrap! (element-at amounts index) ERR_INVALID_MILESTONE_ARRAYS)))
+      (if (is-eq amount u0)
+        (err ERR_INVALID_MILESTONE_AMOUNT)
+        (begin
+          (map-set milestones 
+            {project-id: project-id, milestone-id: index}
+            {
+              description: description,
+              amount-requested: amount,
+              approved: false,
+              funds-released: false,
+              vote-weight: u0
+            }
+          )
+          (process-milestones-inline project-id descriptions amounts (+ index u1) (+ total amount))
+        )
+      )
+    )
+  )
+)
+
+;; Create a new project with milestones
+;; Only callable by verified NGOs
+;; @param donation-token: (optional principal) - none for STX, (some principal) for SIP-010 token
+;; @param goal: The total fundraising goal for the project
+;; @param descriptions: List of milestone descriptions
+;; @param amounts: List of milestone funding amounts (must match descriptions length)
+;; @return: (ok project-id) on success
+(define-public (create-project
+  (donation-token (optional principal))
+  (goal uint)
+  (descriptions (list 50 (string-utf8 500)))
+  (amounts (list 50 uint))
+)
+  (begin
+    ;; Check: Caller is verified NGO
+    (asserts! (is-verified-ngo tx-sender) ERR_NOT_VERIFIED_NGO)
+    ;; Check: Contract is not paused
+    (asserts! (check-not-paused) ERR_CONTRACT_PAUSED)
+    ;; Check: Goal > 0
+    (asserts! (> goal u0) ERR_INVALID_GOAL)
+    ;; Check: Descriptions and amounts have same length
+    (asserts! (is-eq (len descriptions) (len amounts)) ERR_INVALID_MILESTONE_ARRAYS)
+    ;; Check: At least one milestone
+    (asserts! (> (len descriptions) u0) ERR_INVALID_MILESTONE_ARRAYS)
+    ;; Calculate project ID first
+    (let ((new-counter (+ (var-get project-counter) u1))
+          (project-id new-counter))
+      ;; Validate, sum, and create milestones
+      (let ((total-amounts (try! (process-milestones-inline project-id descriptions amounts u0 u0))))
+        ;; Check: Sum of amounts <= goal
+        (asserts! (<= total-amounts goal) ERR_MILESTONE_SUM_EXCEEDS_GOAL)
+        (begin
+          ;; Update project counter
+          (var-set project-counter new-counter)
+          ;; Create and store project
+          (map-set projects project-id {
+            id: project-id,
+            ngo: tx-sender,
+            donation-token: donation-token,
+            goal: goal,
+            total-donated: u0,
+            balance: u0,
+            current-milestone: u0,
+            is-active: true,
+            is-completed: false
+          })
+          ;; Store milestone count
+          (map-set project-milestone-count project-id (len descriptions))
+          (ok project-id)
+        )
+      )
+    )
+  )
+)
