@@ -46,34 +46,35 @@ Traditional charity platforms lack transparency. Donors lose track of funds once
 
 ### Our Solution
 
-✅ **Immutable Tracking**: Every dollar (ETH/USDC) tracked on-chain from donation to expenditure  
+✅ **Immutable Tracking**: Every STX and SIP-010 token tracked on-chain from donation to expenditure  
 ✅ **Milestone Governance**: Funds locked in smart contracts, released only after donor approval  
-✅ **Weighted Voting**: Donors vote based on contribution amount (1 token = 1 vote)  
-✅ **Radical Transparency**: All receipts and impact reports hashed on-chain via IPFS  
-✅ **Low Fees**: Built on Base L2 for affordable transactions  
-✅ **Social Discovery**: Farcaster Mini App integration for viral growth
+✅ **Weighted Voting**: Donors vote based on contribution amount (vote weight = donation amount)  
+✅ **Radical Transparency**: All operations recorded on-chain with full visibility  
+✅ **Low Fees**: Built on Stacks for affordable transactions  
+✅ **Bitcoin Security**: Leverages Bitcoin's security through Stacks blockchain
 
 ---
 
 ## ✨ Key Features
 
 ### 🔐 Core Functionality
-- **Multi-Token Donations**: Support for ETH and ERC20 tokens (USDC, etc.)
+- **Multi-Asset Donations**: Support for STX and SIP-010 fungible tokens
 - **Milestone-Based Funding**: Projects broken into verifiable milestones
 - **Weighted Voting System**: Donors vote on milestone releases based on contribution weight
 - **NGO Verification**: Only verified NGOs can create projects
-- **Real-Time Updates**: React Query for efficient data fetching and caching
+- **Real-Time Updates**: TanStack Query for efficient data fetching and caching
 - **Emergency Controls**: Pausable contracts with owner controls
 
 ### 🚀 Stacks Ecosystem Integration
-- **Farcaster Mini App**: Native integration for social discovery and viral growth
+- **Stacks Connect**: Native wallet integration (Hiro, Xverse, and more)
 - **Stacks Benefits**: Bitcoin security, Clarity language, low fees
-- **Modern Web3 Stack**: Stacks.js, Stacks Connect, latest React patterns
+- **Modern Web3 Stack**: @stacks/connect, @stacks/transactions, latest React patterns
+- **Clarity 4**: Built with the latest Clarity language features
 
 ### 🎨 User Experience
 - **Responsive Design**: Works seamlessly on desktop and mobile
-- **Wallet Integration**: MetaMask, WalletConnect, and more
-- **Network Switching**: Automatic Base network detection and switching
+- **Wallet Integration**: Stacks Connect for multi-wallet support
+- **Network Support**: Testnet and Mainnet deployment ready
 - **Error Handling**: Comprehensive error messages and recovery flows
 
 ### 📊 Transparency Features
@@ -101,7 +102,7 @@ We chose **Stacks** as our platform because:
 
 ### Frontend
 - **Framework**: [Next.js 16.1](https://nextjs.org) (App Router, React Server Components)
-- **Web3**: [Stacks.js](https://stacks.js.org) + [Stacks Connect](https://www.hiro.so/wallet/connect-web)
+- **Web3**: [@stacks/connect](https://github.com/stacks-network/stacks.js/tree/main/packages/connect) + [@stacks/transactions](https://github.com/stacks-network/stacks.js/tree/main/packages/transactions)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com)
 - **State Management**: [Zustand v5](https://zustand-demo.pmnd.rs)
 - **Data Fetching**: [TanStack Query v5](https://tanstack.com/query)
@@ -109,39 +110,41 @@ We chose **Stacks** as our platform because:
 - **Notifications**: React Hot Toast
 
 ### Smart Contracts
-- **Language**: [Clarity](https://docs.stacks.co/docs/clarity)
+- **Language**: [Clarity 4](https://docs.stacks.co/docs/clarity)
 - **Framework**: [Clarinet](https://docs.hiro.so/clarinet)
 - **Security**: Clarity's built-in security features (no reentrancy by design)
-- **Testing**: Comprehensive Clarinet test suite
+- **Testing**: Comprehensive test suite (37 tests) using @stacks/transactions
+- **Deployment**: Stacks Testnet (✅), Mainnet (⏳)
 
 ### Infrastructure
-- **Deployment**: Vercel (Frontend), Stacks Mainnet (Contracts)
-- **RPC**: Stacks API endpoints
-- **IPFS**: For milestone proofs and receipts (future)
+- **Frontend Deployment**: [Netlify](https://ilenoid.netlify.app/)
+- **Contract Deployment**: Stacks Testnet
+- **RPC**: Stacks API endpoints (testnet.hiro.so)
+- **Explorer**: [Stacks Explorer](https://explorer.stacks.co)
 
 ### Integrations
-- **Farcaster Mini App SDK**: Social discovery and engagement
 - **Stacks Connect**: Multi-wallet support (Hiro, Xverse, etc.)
+- **@stacks/transactions**: Contract calls and read-only functions
 - **Stacks Explorer**: Contract verification and exploration
 
 ---
 
 ## 🌐 Live Demo
 
-- **Frontend**: [Coming Soon] 🚀
-- **Stacks Testnet**: [Coming Soon]
-- **Stacks Mainnet**: [Coming Soon]
+- **Frontend**: [https://ilenoid.netlify.app/](https://ilenoid.netlify.app/) ✅ Live
+- **Stacks Testnet**: ✅ Deployed
+- **Stacks Mainnet**: ⏳ Pending final testing
 
 ### Contract Addresses
 
 **Stacks Testnet:**
-- Ilenoid: [Coming Soon]
-- NGO Registry: [Coming Soon]
+- **Deployer**: `ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q`
+- **Ilenoid**: [`ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ilenoid`](https://explorer.stacks.co/txid/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ilenoid?chain=testnet)
+- **NGO Registry**: [`ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ngo-registry`](https://explorer.stacks.co/txid/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ngo-registry?chain=testnet)
+- [View on Stacks Explorer](https://explorer.stacks.co/address/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q?chain=testnet)
 
 **Stacks Mainnet:**
-- Ilenoid: [Coming Soon]
-  - [View on Stacks Explorer](https://explorer.stacks.co/)
-  - [View on Hiro Explorer](https://explorer.hiro.so/)
+- Ilenoid: ⏳ Coming soon after testnet validation
 
 ---
 
@@ -150,9 +153,10 @@ We chose **Stacks** as our platform because:
 ### Prerequisites
 
 - **Node.js** 18+ and npm/yarn/pnpm
-- **Web3 Wallet** (MetaMask, Coinbase Wallet, etc.)
+- **Stacks Wallet** (Hiro Wallet, Xverse, etc.)
 - **Stacks Testnet STX** (for testing) - Get from [Stacks Testnet Faucet](https://explorer.stacks.co/sandbox/faucet)
 - **Git**
+- **Clarinet** (for contract development) - Install from [Clarinet docs](https://docs.hiro.so/clarinet)
 
 ### Installation
 
@@ -184,17 +188,10 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Stacks Network
 NEXT_PUBLIC_STACKS_NETWORK=testnet  # testnet or mainnet
 NEXT_PUBLIC_STACKS_API_URL=https://api.testnet.hiro.so
-# Or use a dedicated provider
 
-# Contracts
-NEXT_PUBLIC_ILENOID_ADDRESS=ST000000000000000000000000000000000000000
-
-# WalletConnect (Optional but recommended)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
-# Get from: https://cloud.reown.com/
-
-# USDC Token (Optional)
-NEXT_PUBLIC_USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+# Contracts (Testnet)
+NEXT_PUBLIC_ILENOID_ADDRESS=ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ilenoid
+NEXT_PUBLIC_NGO_REGISTRY_ADDRESS=ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ngo-registry
 ```
 
 4. **Run the development server:**
@@ -210,11 +207,11 @@ pnpm dev
 
 ### Smart Contract Development
 
-See the [contract README](./contract/README.md) for detailed instructions on:
+See the [contractz README](./contractz/README.md) for detailed instructions on:
 - Building and testing contracts
-- Deploying to Base networks
-- Running tests
-- Gas optimization
+- Deploying to Stacks networks
+- Running tests with Clarinet
+- Contract architecture and features
 
 ---
 
@@ -222,27 +219,28 @@ See the [contract README](./contract/README.md) for detailed instructions on:
 
 ### Key Contracts
 
-1. **Ilenoid.clar**: Main contract handling projects, donations, voting, and fund releases
-2. **NGO Registry**: Verified NGO management system
+1. **ilenoid.clar**: Main contract handling projects, donations, voting, and fund releases (753 lines)
+2. **ngo-registry.clar**: Verified NGO management system
 
 ### Key Features
 
-- ✅ Reentrancy protection (OpenZeppelin ReentrancyGuard)
+- ✅ Clarity 4 language features
 - ✅ Pausable for emergency situations
 - ✅ Owner-only functions for NGO management
 - ✅ Milestone-based fund locking
 - ✅ Weighted voting system (>50% quorum)
-- ✅ Multi-token support (ETH + ERC20)
+- ✅ Multi-asset support (STX + SIP-010 tokens)
+- ✅ Built-in security (no reentrancy by design in Clarity)
 
 ### Security
 
-- Comprehensive test coverage
-- OpenZeppelin battle-tested contracts
-- CEI (Checks-Effects-Interactions) pattern
-- Custom errors for gas efficiency
+- Comprehensive test coverage (37 tests)
+- Clarity's built-in security features
 - Access control mechanisms
+- Emergency withdrawal capabilities
+- Full on-chain transparency
 
-See [contract documentation](./contract/README.md) for more details.
+See [contractz documentation](./contractz/README.md) for more details.
 
 ---
 
@@ -293,17 +291,18 @@ contracts/
 
 ### Security Features
 
-- **Reentrancy Protection**: OpenZeppelin ReentrancyGuard
+- **Clarity Language**: Decidable, secure smart contracts by design
+- **No Reentrancy**: Clarity prevents reentrancy attacks by design
 - **Access Control**: Owner-only functions for critical operations
 - **Pausable**: Emergency pause functionality
 - **Input Validation**: Comprehensive checks on all inputs
-- **Gas Optimization**: Custom errors, packed structs
-- **Upgrade Path**: Designed for future upgradeability
+- **On-Chain Transparency**: All operations are verifiable on-chain
 
 ### Audit Status
 
 - ✅ Internal security review completed
-- ✅ OpenZeppelin contracts used (audited)
+- ✅ Comprehensive test suite (37 tests)
+- ✅ Clarity's built-in security guarantees
 - ⏳ External audit planned
 
 ### Reporting Security Issues
@@ -314,8 +313,9 @@ If you discover a security vulnerability, please email [security@yourdomain.com]
 
 ## 📚 Documentation
 
-- [Smart Contract Documentation](./contract/README.md)
-- [Base Builder Ranking Strategy](./docs/BASE_BUILDER_RANKING_STRATEGY.md)
+- [Smart Contract Documentation](./contractz/README.md)
+- [Deployment Guide](./contractz/DEPLOYMENT_GUIDE.md)
+- [Implementation Phases](./contractz/docs/IMPLEMENTATION_PHASES.md)
 - [NGO Registration Flow](./docs/ngo-registration-flow.md)
 - [Wallet Connection Setup](./docs/wallet-connection-setup.md)
 
@@ -346,27 +346,25 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📊 Project Status
 
 ### ✅ Completed
-- Smart contract development and testing
-- Frontend application (Next.js)
-- Wallet integration (Wagmi v3)
+- Smart contract development and testing (Clarity 4)
+- Frontend application (Next.js) - [Live on Netlify](https://ilenoid.netlify.app/)
+- Wallet integration (@stacks/connect)
 - NGO registration system
-- Donation system (ETH + ERC20)
-- Voting system
+- Donation system (STX + SIP-010 tokens)
+- Voting system with weighted votes
 - Milestone management
-- Admin panel
-- Farcaster Mini App integration
+- Testnet deployment
+- Comprehensive test suite (37 tests)
 
 ### 🚧 In Progress
-- Mainnet deployment
-- Production frontend deployment
-- IPFS integration for milestone proofs
+- Mainnet deployment (pending final testing)
+- Production optimizations
 - Analytics dashboard
 
 ### 📋 Planned
 - Mobile app (React Native)
-- Additional token support
-- Governance token
-- Staking mechanisms
+- Additional SIP-010 token support
+- Governance improvements
 - Multi-language support
 
 ---
@@ -404,11 +402,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- **Website**: [https://tranct.netlify.app](https://tranct.netlify.app)
-- **Documentation**: [Update with your docs URL]
-- **Twitter/X**: [@YourHandle](https://twitter.com/YourHandle)
-- **Discord**: [Your Discord](https://discord.gg/your-server)
-- **GitHub**: [Your Repo](https://github.com/yourusername/ilenoid)
+- **Live Frontend**: [https://ilenoid.netlify.app/](https://ilenoid.netlify.app/)
+- **Testnet Contracts**: [Stacks Explorer](https://explorer.stacks.co/address/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q?chain=testnet)
+- **Smart Contract Docs**: [contractz/README.md](./contractz/README.md)
+- **Stacks Documentation**: [docs.stacks.co](https://docs.stacks.co)
 
 ---
 
