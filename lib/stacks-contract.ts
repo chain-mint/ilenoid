@@ -1,5 +1,5 @@
 import { fetchCallReadOnlyFunction, makeContractCall, Cl, cvToJSON, cvToValue } from "@stacks/transactions";
-import { stacksNetwork, ILENOID_CONTRACT_ADDRESS } from "./stacks";
+import { stacksNetwork, ILENOID_CONTRACT_ADDRESS, isMainnet } from "./stacks";
 import { ILENOID_CONTRACT_NAME, ILENOID_CONTRACT_INTERFACE } from "./contract";
 import { requestStacksMethod } from "./stacks-connect";
 
@@ -29,7 +29,8 @@ export async function callReadOnlyFunction(
     if (response.type === "ok") {
       return cvToJSON(response.value);
     } else {
-      throw new Error(`Contract error: ${cvToValue(response.value)}`);
+      const errorValue = (response as any).value;
+      throw new Error(`Contract error: ${JSON.stringify(errorValue)}`);
     }
   } catch (error) {
     console.error(`Error calling ${functionName}:`, error);
@@ -51,7 +52,7 @@ export async function callContractFunction(
       contract: `${ILENOID_CONTRACT_ADDRESS}.${ILENOID_CONTRACT_NAME}`,
       functionName,
       functionArgs,
-      network: stacksNetwork.isMainnet() ? "mainnet" : "testnet",
+      network: isMainnet ? "mainnet" : "testnet",
       postConditions: postConditions || [],
       postConditionMode,
     });
@@ -85,7 +86,7 @@ export async function callContractFunctionWithSTX(
       contract: `${ILENOID_CONTRACT_ADDRESS}.${ILENOID_CONTRACT_NAME}`,
       functionName,
       functionArgs,
-      network: stacksNetwork.isMainnet() ? "mainnet" : "testnet",
+      network: isMainnet ? "mainnet" : "testnet",
       postConditions: [postCondition],
       postConditionMode: "deny",
       // Note: The STX transfer happens via the transaction itself

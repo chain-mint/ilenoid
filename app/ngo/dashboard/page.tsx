@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { type Address } from "viem";
 import { useIsVerifiedNGO } from "@/hooks/useNGO";
 import { useAllProjects } from "@/hooks/useProject";

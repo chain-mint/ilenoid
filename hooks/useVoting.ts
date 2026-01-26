@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
 import { callReadOnlyFunction, callContractFunction, ClarityValues } from "@/lib/stacks-contract";
 import { getStxAddress } from "@/lib/stacks-connect";
+import { useProject, useProjectMilestones } from "./useProject";
 import toast from "react-hot-toast";
 
 /**
@@ -95,10 +96,79 @@ export function useVoteOnMilestone(
   });
 
   return {
-    vote: (approve: boolean) => vote(approve),
+    vote: async (approve: boolean) => {
+      await vote(approve);
+    },
     txId,
     isPending,
     isSuccess,
     error: error as Error | null,
   };
+}
+
+/**
+ * Hook to get milestone vote status
+ * Returns voting information for a milestone including quorum status
+ */
+export function useMilestoneVoteStatus(
+  projectId: number | bigint,
+  milestoneId: number | bigint
+): {
+  voteStatus: {
+    voteWeight: bigint;
+    snapshot: bigint;
+    canRelease: boolean;
+  } | null;
+  quorumPercentage: number;
+  quorumMet: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
+  // Get project to access totalDonated (used as snapshot)
+  const { project, isLoading: isLoadingProject } = useProject(projectId);
+  
+  // Get milestone to access voteWeight
+  const { milestones, isLoading: isLoadingMilestones } = useProjectMilestones(projectId);
+  
+  const milestone = milestones[Number(milestoneId)];
+  
+  const isLoading = isLoadingProject || isLoadingMilestones;
+  
+  // Calculate vote status from milestone data
+  // For Stacks, we use voteWeight from milestone and totalDonated from project as snapshot
+  const snapshot = project?.totalDonated || BigInt(0);
+  const voteWeight = milestone?.voteWeight || BigInt(0);
+  
+  // Quorum is >50% of snapshot
+  const quorumThreshold = snapshot / BigInt(2);
+  const quorumMet = voteWeight > quorumThreshold && snapshot > BigInt(0);
+  const quorumPercentage = snapshot > BigInt(0) 
+    ? Number((voteWeight * BigInt(100)) / snapshot)
+    : 0;
+  
+  const voteStatus = milestone && project ? {
+    voteWeight,
+    snapshot,
+    canRelease: quorumMet && project.balance >= (milestone.amountRequested || BigInt(0)),
+  } : null;
+
+  return {
+    voteStatus,
+    quorumPercentage,
+    quorumMet,
+    isLoading,
+    isError: false,
+    error: null,
+  };
+}
+
+/**
+ * Hook to vote on a milestone (alias for useVoteOnMilestone)
+ */
+export function useVoteMilestone(
+  projectId: number | bigint,
+  milestoneId: number | bigint
+) {
+  return useVoteOnMilestone(projectId, milestoneId);
 }

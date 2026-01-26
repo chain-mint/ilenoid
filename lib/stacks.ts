@@ -1,4 +1,4 @@
-import { StacksNetwork, StacksTestnet, StacksMainnet } from "@stacks/network";
+import { StacksNetwork, STACKS_MAINNET, STACKS_TESTNET, networkFromName } from "@stacks/network";
 
 /**
  * Stacks network configuration
@@ -12,10 +12,10 @@ const networkEnv = process.env.NEXT_PUBLIC_STACKS_NETWORK || "testnet";
 export const getStacksNetwork = (): StacksNetwork => {
   switch (networkEnv) {
     case "mainnet":
-      return new StacksMainnet();
+      return STACKS_MAINNET;
     case "testnet":
     default:
-      return new StacksTestnet();
+      return STACKS_TESTNET;
   }
 };
 

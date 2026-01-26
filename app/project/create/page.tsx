@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useConnection } from "wagmi";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { useIsVerifiedNGO } from "@/hooks/useNGO";
-import { type Address, parseEther, parseUnits, isAddress } from "viem";
-import { ILENOID_ADDRESS, ILENOID_ABI, USDC_ADDRESS } from "@/lib/contract";
+import { ILENOID_ADDRESS, ILENOID_ABI, USDC_ADDRESS, ILENOID_CONTRACT_INTERFACE } from "@/lib/contract";
+import { callContractFunction, ClarityValues } from "@/lib/stacks-contract";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { WalletConnect } from "@/components/web3/WalletConnect";
 import { NetworkSwitcher } from "@/components/web3/NetworkSwitcher";
 import { Spinner } from "@/components/ui/Spinner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { parseContractError } from "@/lib/errors";
@@ -46,47 +45,58 @@ export default function CreateProjectPage() {
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Contract write
-  const writeContract = useWriteContract();
-  const hash = writeContract.data;
-  const isPending = writeContract.isPending;
-  const writeError = writeContract.error;
+  // Contract write using Stacks
   const {
-    isLoading: isConfirming,
+    mutate: createProject,
+    data: txId,
+    isPending,
     isSuccess,
-    error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  const prevSuccessRef = useRef(false);
-
-  // Handle success - redirect to new project
-  useEffect(() => {
-    if (isSuccess && !prevSuccessRef.current && hash) {
-      prevSuccessRef.current = true;
-      toast.success("Project created successfully!");
+    error: contractError,
+  } = useMutation({
+    mutationFn: async (args: {
+      donationToken: string;
+      goal: bigint;
+      descriptions: string[];
+      amounts: bigint[];
+    }) => {
+      // Convert amounts to Clarity values
+      const amountsClarity = args.amounts.map((amt) => ClarityValues.uint(Number(amt)));
+      const descriptionsClarity = args.descriptions.map((desc) => ClarityValues.string(desc));
       
-      // Invalidate projects query
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      
-      // Get project ID from transaction receipt (would need to parse event)
-      // For now, we'll redirect to home and let user find the new project
-      // In a production app, you'd parse the ProjectCreated event to get the projectId
+      // For Stacks, donationToken is a principal (address)
+      // If it's the zero address, we'll use a principal or handle differently
+      const tokenPrincipal = args.donationToken === "0x0000000000000000000000000000000000000000" 
+        ? ClarityValues.none() 
+        : ClarityValues.principal(args.donationToken);
+
+      const txId = await callContractFunction(
+        ILENOID_CONTRACT_INTERFACE.public.createProject,
+        [
+          tokenPrincipal,
+          ClarityValues.uint(Number(args.goal)),
+          ClarityValues.list(descriptionsClarity),
+          ClarityValues.list(amountsClarity),
+        ]
+      );
+
+      return txId;
+    },
+    onSuccess: (txId) => {
+      toast.success(`Project created successfully! TX: ${txId.substring(0, 8)}...`);
+      queryClient.invalidateQueries({ queryKey: ["allProjects"] });
+      queryClient.invalidateQueries({ queryKey: ["projectCounter"] });
       setTimeout(() => {
         router.push("/");
       }, 2000);
-    }
-  }, [isSuccess, hash, queryClient, router]);
-
-  // Handle errors
-  useEffect(() => {
-    const currentError = writeError || receiptError;
-    if (currentError) {
-      const errorMessage = parseContractError(currentError);
+    },
+    onError: (error: Error) => {
+      const errorMessage = parseContractError(error);
       toast.error(errorMessage);
-    }
-  }, [writeError, receiptError]);
+    },
+  });
+
+  const prevSuccessRef = useRef(false);
+  const isConfirming = false; // Stacks doesn't have separate confirmation step
 
   // Add milestone
   const addMilestone = () => {
@@ -177,35 +187,22 @@ export default function CreateProjectPage() {
     }
 
     try {
-      // Determine token decimals
-      const isETH = donationToken === "0x0000000000000000000000000000000000000000";
-      const isUSDC = donationToken.toLowerCase() === USDC_ADDRESS.toLowerCase();
-      const decimals = isETH ? 18 : isUSDC ? 6 : 18;
-
-      // Parse goal
-      const goalParsed = isETH
-        ? parseEther(goal)
-        : parseUnits(goal, decimals);
-
-      // Parse milestone amounts
-      const amounts = milestones.map((m) =>
-        isETH ? parseEther(m.amount) : parseUnits(m.amount, decimals)
+      // For Stacks, we use STX (microSTX = 1,000,000 per STX)
+      // Convert goal and amounts to microSTX
+      const goalMicroSTX = BigInt(Math.floor(parseFloat(goal) * 1_000_000));
+      const amountsMicroSTX = milestones.map((m) =>
+        BigInt(Math.floor(parseFloat(m.amount) * 1_000_000))
       );
 
       // Prepare descriptions
       const descriptions = milestones.map((m) => m.description);
 
-      // Call contract
-      await writeContract.mutate({
-        address: ILENOID_ADDRESS,
-        abi: ILENOID_ABI,
-        functionName: "createProject",
-        args: [
-          donationToken as Address,
-          goalParsed,
-          descriptions,
-          amounts,
-        ],
+      // Call contract using Stacks
+      createProject({
+        donationToken: donationToken, // For Stacks, this would be a principal or none for STX
+        goal: goalMicroSTX,
+        descriptions,
+        amounts: amountsMicroSTX,
       });
     } catch (error) {
       // Parse and display error
@@ -215,9 +212,9 @@ export default function CreateProjectPage() {
     }
   };
 
-  const isETH = donationToken === "0x0000000000000000000000000000000000000000";
-  const tokenName = isETH ? "ETH" : donationToken.toLowerCase() === USDC_ADDRESS.toLowerCase() ? "USDC" : "Token";
-  const tokenDecimals = isETH ? 18 : donationToken.toLowerCase() === USDC_ADDRESS.toLowerCase() ? 6 : 18;
+  // For Stacks, we use STX (native token)
+  const tokenName = "STX";
+  const tokenDecimals = 6; // STX uses 6 decimals (microSTX)
 
   return (
     <div className="min-h-screen bg-gray-50">

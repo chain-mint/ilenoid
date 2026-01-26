@@ -121,15 +121,22 @@ export function useProjectMilestones(projectId: number | bigint): {
   const senderAddress = getStxAddress();
 
   // Get project to find milestone count
-  const { data: project, isLoading: isLoadingProject } = useProject(projectId);
+  const { project, isLoading: isLoadingProject } = useProject(projectId);
 
   // Fetch all milestones
+  // For Stacks, we need to get milestone count from the project data
+  // Since milestoneCount might not be in the Project type, we'll fetch milestones differently
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["projectMilestones", projectId, project?.milestoneCount],
+    queryKey: ["projectMilestones", projectId, project?.id],
     queryFn: async () => {
-      if (!project || !project.milestoneCount) return [];
+      if (!project) return [];
+      
+      // Try to get milestone count - if not available, we'll fetch milestones one by one
+      // For now, we'll try fetching up to 10 milestones
+      const maxMilestones = 10;
 
-      const milestoneIds = Array.from({ length: project.milestoneCount }, (_, i) => i);
+      const milestoneCount = (project as any)?.milestoneCount || maxMilestones;
+      const milestoneIds = Array.from({ length: milestoneCount }, (_, i) => i);
       const milestones = await Promise.all(
         milestoneIds.map(async (milestoneId) => {
           try {
@@ -153,7 +160,7 @@ export function useProjectMilestones(projectId: number | bigint): {
 
       return milestones.filter((m): m is Milestone => m !== null);
     },
-    enabled: !!project && project.milestoneCount > 0 && !!senderAddress,
+    enabled: !!project && !!senderAddress,
   });
 
   return {
@@ -161,6 +168,29 @@ export function useProjectMilestones(projectId: number | bigint): {
     isLoading: isLoading || isLoadingProject,
     isError,
     error: error as Error | null,
+  };
+}
+
+/**
+ * Hook to get the current milestone for a project
+ * Returns the first incomplete milestone, or the last milestone if all are complete
+ */
+export function useCurrentMilestone(projectId: number | bigint): {
+  milestone: Milestone | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+} {
+  const { milestones, isLoading, isError, error } = useProjectMilestones(projectId);
+
+  // Find the first milestone that hasn't been released, or the last one
+  const currentMilestone = milestones.find((m) => !m.fundsReleased) || milestones[milestones.length - 1];
+
+  return {
+    milestone: currentMilestone,
+    isLoading,
+    isError,
+    error,
   };
 }
 

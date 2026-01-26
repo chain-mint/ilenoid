@@ -1,5 +1,5 @@
 import { connect, disconnect, isConnected, getLocalStorage, request } from "@stacks/connect";
-import { stacksNetwork } from "./stacks";
+import { isMainnet } from "./stacks";
 
 /**
  * Stacks Connect configuration and utilities
@@ -15,15 +15,17 @@ export interface StacksUserData {
 
 /**
  * Connect to Stacks wallet
+ * Only works on client side (browser)
  */
-export const connectStacksWallet = async (): Promise<StacksUserData | null> => {
+export const connectStacksWallet = async (): Promise<any> => {
+  if (typeof window === 'undefined') return null;
   try {
     if (isConnected()) {
       return getLocalStorage();
     }
 
     const response = await connect({
-      network: stacksNetwork,
+      network: isMainnet ? "mainnet" : "testnet",
     });
 
     return response;
@@ -42,36 +44,54 @@ export const disconnectStacksWallet = (): void => {
 
 /**
  * Check if wallet is connected
+ * Only works on client side (browser)
  */
 export const isWalletConnected = (): boolean => {
-  return isConnected();
+  if (typeof window === 'undefined') return false;
+  try {
+    return isConnected();
+  } catch (error) {
+    return false;
+  }
 };
 
 /**
  * Get current user data from local storage
+ * Only works on client side (browser)
  */
 export const getStacksUserData = (): StacksUserData | null => {
-  return getLocalStorage();
+  if (typeof window === 'undefined') return null;
+  try {
+    return getLocalStorage();
+  } catch (error) {
+    return null;
+  }
 };
 
 /**
  * Get STX address from connected wallet
+ * Only works on client side (browser)
  */
 export const getStxAddress = (): string | null => {
-  const userData = getLocalStorage();
-  return userData?.addresses?.stx?.[0]?.address || null;
+  if (typeof window === 'undefined') return null;
+  try {
+    const userData = getLocalStorage();
+    return userData?.addresses?.stx?.[0]?.address || null;
+  } catch (error) {
+    return null;
+  }
 };
 
 /**
  * Request method for wallet interactions
  * Used for contract calls, transfers, etc.
  */
-export const requestStacksMethod = async <T extends string>(
-  method: T,
+export const requestStacksMethod = async (
+  method: string,
   params: any
 ): Promise<any> => {
   try {
-    return await request(method, params);
+    return await request(method as any, params);
   } catch (error) {
     console.error(`Failed to execute ${method}:`, error);
     throw error;

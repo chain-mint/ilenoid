@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { type Address } from "viem";
 import { useContractOwner } from "@/hooks/useContractOwner";
 import { useRegisterNGO } from "@/hooks/useRegisterNGO";
@@ -34,8 +34,8 @@ interface NGOApplication {
 export default function AdminNGOPage() {
   const { address, isConnected } = useConnection();
   const { owner, isOwner, isLoading: isLoadingOwner } = useContractOwner();
-  const { registerNGO, isPending: isRegistering, isConfirming: isConfirmingRegister } = useRegisterNGO();
-  const { revokeNGO, isPending: isRevoking, isConfirming: isConfirmingRevoke } = useRevokeNGO();
+  const { registerNGO, isPending: isRegistering } = useRegisterNGO();
+  const { revokeNGO, isPending: isRevoking } = useRevokeNGO();
   
   const [applications, setApplications] = useState<NGOApplication[]>([]);
   const [verifiedNGOs, setVerifiedNGOs] = useState<Address[]>([]);
@@ -296,8 +296,8 @@ export default function AdminNGOPage() {
               <Button
                 variant="primary"
                 onClick={handleDirectRegister}
-                disabled={isRegistering || isConfirmingRegister}
-                isLoading={isRegistering || isConfirmingRegister}
+                disabled={isRegistering}
+                isLoading={isRegistering}
               >
                 Register NGO
               </Button>
@@ -326,7 +326,7 @@ export default function AdminNGOPage() {
                     application={app}
                     onApprove={() => handleApprove(app)}
                     onReject={() => handleReject(app)}
-                    isProcessing={isRegistering || isConfirmingRegister}
+                    isProcessing={isRegistering}
                   />
                 ))}
               </div>
@@ -397,7 +397,7 @@ function ApplicationCard({
   isRejected?: boolean;
 }) {
   const { isVerified } = useIsVerifiedNGO(application.walletAddress as Address);
-  const { revokeNGO, isPending: isRevoking, isConfirming: isConfirmingRevoke } = useRevokeNGO();
+  const { revokeNGO, isPending: isRevoking } = useRevokeNGO();
 
   const handleRevoke = async () => {
     if (!confirm(`Are you sure you want to revoke NGO status for ${application.organizationName}?`)) {
@@ -500,8 +500,8 @@ function ApplicationCard({
               variant="secondary"
               size="sm"
               onClick={handleRevoke}
-              disabled={isRevoking || isConfirmingRevoke}
-              isLoading={isRevoking || isConfirmingRevoke}
+              disabled={isRevoking}
+              isLoading={isRevoking}
             >
               Revoke
             </Button>

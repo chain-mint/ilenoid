@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useProject, useProjectMilestones, useCurrentMilestone } from "@/hooks/useProject";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { MilestoneCard } from "@/components/project/MilestoneCard";
 import { VotingProgress } from "@/components/project/VotingProgress";

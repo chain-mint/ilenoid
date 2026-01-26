@@ -114,11 +114,30 @@ export function useDonateSTX(projectId: number | bigint): {
   }, [isSuccess]);
 
   return {
-    donate: (amount: string) => donate(amount),
+    donate: async (amount: string) => {
+      await donate(amount);
+    },
     txId,
     isPending,
     isSuccess,
     error: error as Error | null,
   };
+}
+
+/**
+ * Hook for ETH donations (compatibility alias)
+ * Note: Stacks uses STX, not ETH. This is an alias for useDonateSTX.
+ */
+export function useDonateETH(projectId: number | bigint) {
+  return useDonateSTX(projectId);
+}
+
+/**
+ * Hook for ERC20 token donations (compatibility alias)
+ * Note: Stacks doesn't support ERC20 tokens. This is an alias for useDonateSTX.
+ * For Stacks-native tokens, use useDonateSTX directly.
+ */
+export function useDonateERC20(projectId: number | bigint) {
+  return useDonateSTX(projectId);
 }
 

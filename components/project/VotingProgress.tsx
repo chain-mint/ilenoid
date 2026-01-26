@@ -1,6 +1,6 @@
 "use client";
 
-import { useConnection } from "wagmi";
+import { useConnection } from "@/hooks/useConnection";
 import { useMilestoneVoteStatus } from "@/hooks/useVoting";
 import { useHasVoted } from "@/hooks/useVoting";
 import { useDonorContribution } from "@/hooks/useDonation";
@@ -29,18 +29,17 @@ export function VotingProgress({
     useMilestoneVoteStatus(projectId, milestoneId);
   const { hasVoted, isLoading: isLoadingVote } = useHasVoted(
     projectId,
-    milestoneId,
-    address
+    milestoneId
   );
   const { contribution, isLoading: isLoadingContribution } = useDonorContribution(
     projectId,
     address
   );
-  const { vote, isPending, isConfirming, error: voteError } = useVoteMilestone(projectId);
+  const { vote, isPending, error: voteError } = useVoteMilestone(projectId, milestoneId);
   const [voteErrorMessage, setVoteErrorMessage] = useState<string>("");
 
   const isLoading = isLoadingStatus || isLoadingVote || isLoadingContribution;
-  const canVote = address && contribution > BigInt(0) && !hasVoted && !isPending && !isConfirming;
+  const canVote = address && contribution > BigInt(0) && !hasVoted && !isPending;
 
   // Handle vote errors
   useEffect(() => {
@@ -145,13 +144,13 @@ export function VotingProgress({
                     variant="primary"
                     onClick={() => {
                       setVoteErrorMessage("");
-                      vote();
+                      vote(true); // Approve the milestone
                     }}
-                    isLoading={isPending || isConfirming}
-                    disabled={isPending || isConfirming}
+                    isLoading={isPending}
+                    disabled={isPending}
                     fullWidth
                   >
-                    {isPending ? "Confirming..." : isConfirming ? "Processing..." : "Vote on Milestone"}
+                    {isPending ? "Processing..." : "Vote on Milestone"}
                   </Button>
                   {voteErrorMessage && (
                     <p className="text-xs text-charity-red text-center">

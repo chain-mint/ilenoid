@@ -45,3 +45,12 @@ export const ILENOID_CONTRACT_INTERFACE = {
 export const CHARITY_TRACKER_ADDRESS = ILENOID_ADDRESS;
 export const CHARITY_TRACKER_ABI = null; // Clarity doesn't use ABIs
 
+// Export ILENOID_ABI for backward compatibility (Clarity doesn't use ABIs)
+// This is set to null since Clarity contracts don't have ABIs like Solidity
+export const ILENOID_ABI = null;
+
+// USDC is not available on Stacks - this is a placeholder for compatibility
+// Stacks uses STX as the native token, not ERC-20 tokens
+// If you need stablecoins on Stacks, consider using wrapped tokens or other Stacks-native tokens
+export const USDC_ADDRESS = "" as const;
+
