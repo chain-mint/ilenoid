@@ -17,4 +17,3 @@ describe("Basic Contract Tests", () => {
     expect(counter).toBeDefined();
   });
 });
-
