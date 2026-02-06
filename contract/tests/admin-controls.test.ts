@@ -44,4 +44,34 @@ describe("Admin Controls", () => {
     });
   });
 
+  describe("Emergency Withdrawal", () => {
+    let projectId: number;
+
+    beforeEach(() => {
+      registerNGO(accounts.wallet1, "deployer");
+      createProject(
+        accounts.wallet1,
+        1000000,
+        ["Milestone 1"],
+        [1000000],
+        null,
+      );
+      projectId = 1;
+
+      donateSTX(projectId, 500000, accounts.wallet2);
+      pauseContract("deployer");
+    });
+
+    it("should allow owner to withdraw when paused", () => {
+      const balanceBefore = getProjectBalance(projectId);
+      expect(balanceBefore).toBeUint(500000);
+
+      const result = emergencyWithdraw(projectId, "deployer");
+      expect(result.result).toBeOk(Cl.uint(500000));
+
+      const balanceAfter = getProjectBalance(projectId);
+      expect(balanceAfter).toBeUint(0);
+    });
+
+  });
 });
