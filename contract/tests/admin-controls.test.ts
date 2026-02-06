@@ -73,5 +73,16 @@ describe("Admin Controls", () => {
       expect(balanceAfter).toBeUint(0);
     });
 
+    it("should not allow non-owner to withdraw", () => {
+      const result = emergencyWithdraw(projectId, "wallet1");
+      expect(result.result).toBeErr(Cl.uint(61)); // ERR_UNAUTHORIZED
+    });
+
+    it("should reject withdrawal when not paused", () => {
+      unpauseContract("deployer");
+
+      const result = emergencyWithdraw(projectId, "deployer");
+      expect(result.result).toBeErr(Cl.uint(60)); // ERR_CONTRACT_PAUSED
+    });
   });
 });
