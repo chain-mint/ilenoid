@@ -1,4 +1,4 @@
-[[# Product Information
+# Product Information
 
 ## Product Name:
 **Ilenoid**
