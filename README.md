@@ -207,7 +207,7 @@ pnpm dev
 
 ### Smart Contract Development
 
-See the [contractz README](./contractz/README.md) for detailed instructions on:
+See the [contract README](./contract/README.md) for detailed instructions on:
 - Building and testing contracts
 - Deploying to Stacks networks
 - Running tests with Clarinet
@@ -240,7 +240,7 @@ See the [contractz README](./contractz/README.md) for detailed instructions on:
 - Emergency withdrawal capabilities
 - Full on-chain transparency
 
-See [contractz documentation](./contractz/README.md) for more details.
+See [contract documentation](./contract/README.md) for more details.
 
 ---
 
@@ -270,9 +270,9 @@ If you discover a security vulnerability, please email [security@yourdomain.com]
 
 ## 📚 Documentation
 
-- [Smart Contract Documentation](./contractz/README.md)
-- [Deployment Guide](./contractz/DEPLOYMENT_GUIDE.md)
-- [Implementation Phases](./contractz/docs/IMPLEMENTATION_PHASES.md)
+- [Smart Contract Documentation](./contract/README.md)
+- [Deployment Guide](./contract/DEPLOYMENT_GUIDE.md)
+- [Implementation Phases](./contract/docs/IMPLEMENTATION_PHASES.md)
 - [NGO Registration Flow](./docs/ngo-registration-flow.md)
 - [Wallet Connection Setup](./docs/wallet-connection-setup.md)
 
@@ -320,7 +320,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Live Frontend**: [https://ilenoid.netlify.app/](https://ilenoid.netlify.app/)
 - **Testnet Contracts**: [Stacks Explorer](https://explorer.stacks.co/address/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q?chain=testnet)
-- **Smart Contract Docs**: [contractz/README.md](./contractz/README.md)
+- **Smart Contract Docs**: [contract/README.md](./contract/README.md)
 - **Stacks Documentation**: [docs.stacks.co](https://docs.stacks.co)
 
 ---

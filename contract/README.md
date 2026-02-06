@@ -36,7 +36,7 @@ Smart contracts for the Ilenoid transparent charity tracker on Stacks blockchain
 
 ## Dependencies
 
-### Smart Contracts (contractz/)
+### Smart Contracts (contract/)
 - `@stacks/clarinet-sdk: ^3.10.0` - Testing framework
 - `@stacks/transactions: ^7.3.0` - **Used for contract interactions** ✅
 - `vitest-environment-clarinet: ^3.0.2` - Test environment
@@ -49,8 +49,8 @@ Smart contracts for the Ilenoid transparent charity tracker on Stacks blockchain
 **Library Usage Details:**
 
 **@stacks/transactions** is used in:
-- `contractz/tests/helpers.ts` - Test utilities for contract calls
-- `contractz/tests/ilenoid.test.ts` - Comprehensive test suite (37 tests)
+- `contract/tests/helpers.ts` - Test utilities for contract calls
+- `contract/tests/ilenoid.test.ts` - Comprehensive test suite (37 tests)
 - `lib/stacks-contract.ts` - Contract interaction layer
 - `hooks/useProject.ts` - React hooks for project data
 - Functions: `makeContractCall`, `fetchCallReadOnlyFunction`, `Cl` value constructors
@@ -72,7 +72,7 @@ Both libraries are production-ready and actively used in the live frontend at [h
 ### Installation
 
 ```bash
-cd contractz
+cd contract
 npm install
 ```
 
@@ -117,7 +117,7 @@ This Clarity implementation is the primary and active contract for the Ilenoid p
 ### Quick Deploy to Testnet
 
 ```bash
-cd contractz
+cd contract
 clarinet deployments generate --testnet --medium-cost
 clarinet deployments apply --testnet
 ```
