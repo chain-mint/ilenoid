@@ -63,7 +63,7 @@ See the [README.md](README.md) for setup instructions.
 npm test
 
 # Smart contract tests
-cd contractz
+cd contract
 npm test
 # or
 clarinet test
