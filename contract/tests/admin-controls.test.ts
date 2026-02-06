@@ -28,6 +28,20 @@ describe("Admin Controls", () => {
       expect(paused).toBeBool(true);
     });
 
+    it("should not allow non-owner to pause", () => {
+      const result = pauseContract("wallet1");
+      expect(result.result).toBeErr(Cl.uint(61)); // ERR_UNAUTHORIZED
+    });
+
+    it("should allow owner to unpause contract", () => {
+      pauseContract("deployer");
+
+      const result = unpauseContract("deployer");
+      expect(result.result).toBeOk(Cl.bool(true));
+
+      const paused = getContractPaused();
+      expect(paused).toBeBool(false);
+    });
   });
 
 });
