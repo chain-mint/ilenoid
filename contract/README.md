@@ -172,6 +172,9 @@ clarinet check
 - 📖 [Deployment Guide](./DEPLOYMENT_GUIDE.md)
 - 📋 [Implementation Phases](./docs/IMPLEMENTATION_PHASES.md)
 
+- Address: ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ilenoid
+- TX: a18b8d20c3ca5122803a3efd3292fbd9116f37a9d5c249b00c701e20e5e8ef17
+
 ## Contributing
 
 This is an open-source project built on Stacks blockchain. We welcome contributions from the community!

@@ -143,6 +143,9 @@ We chose **Stacks** as our platform because:
 - **NGO Registry**: [`ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ngo-registry`](https://explorer.stacks.co/txid/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ngo-registry?chain=testnet)
 - [View on Stacks Explorer](https://explorer.stacks.co/address/ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q?chain=testnet)
 
+- Address: ST2W758Q6BS97GWK7STXTAW2ZG26YFXE4V5WMTG3Q.ilenoid
+- TX: a18b8d20c3ca5122803a3efd3292fbd9116f37a9d5c249b00c701e20e5e8ef17
+
 **Stacks Mainnet:**
 - Ilenoid: ⏳ Coming soon after testnet validation
 
